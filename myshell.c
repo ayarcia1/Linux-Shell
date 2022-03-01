@@ -63,7 +63,7 @@ int main(int argc, char **argv, char **envp){
     if(strcmp(argv[1], "path")== 0){
         if(argc>=3){
             int i;
-            for(i=2; i<argv[argc-1]; i++){
+            for(i=2; i<argc; i++){
                 setenv("PATH", argv[i], 1);
             }
         }
@@ -81,8 +81,13 @@ int main(int argc, char **argv, char **envp){
     }
 
     if(strcmp(argv[1], "echo")== 0){
-        if(argc==3){
-            printf("%s\n", argv[2]);
+        if(argc>=3){
+            int i;
+            for(i=2; i<argc; i++){
+                printf("%s", argv[i]);
+                printf(" ");
+            }
+            printf("\n");
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
@@ -95,7 +100,7 @@ int main(int argc, char **argv, char **envp){
             FILE *n;
             char *txt;
             size_t size;
-            n = fopen("help.txt", "r");
+            n = fopen("readme_doc.docx", "r");
 
             if(n == NULL){
                 printf("error\n");
@@ -137,6 +142,7 @@ int main(int argc, char **argv, char **envp){
 	        exit(1);
         }
     }
+    return 0;
 }
 
 void recursive_dir(char *pathName){
@@ -152,7 +158,6 @@ void recursive_dir(char *pathName){
             strcpy(path, pathName);
             strcat(path, "/");
             strcat(path, files->d_name);
-         
             recursive_dir(path);
         }
     }
