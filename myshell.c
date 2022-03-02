@@ -8,13 +8,14 @@ void recursive_dir(char *pathname);
 
 int main(int argc, char **argv, char **envp){
     const char *error_message = "myshell: error, please try again.\n";
+
     if (strcmp(argv[1], "cd")== 0){
         if(argc == 2){
             char path[100];
             printf("%s\n", getcwd(path, sizeof(path)));
         }
         else if(argc == 3){
-            chdir(argv[1]);
+            chdir(argv[2]);
             printf("directory has been changed to %s\n", argv[2]);
         }
         else{
@@ -38,7 +39,7 @@ int main(int argc, char **argv, char **envp){
 
         if(argc==2){
             directory = opendir(".");
-            if (directory == NULL){
+            if(directory == NULL){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            exit(1);
             }
@@ -46,8 +47,8 @@ int main(int argc, char **argv, char **envp){
             recursive_dir(".");
         }
         else if(argc==3){
-            directory = opendir(argv[1]);
-            if (directory == NULL){
+            directory = opendir(argv[2]);
+            if(directory == NULL){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            exit(1);
             }
@@ -100,7 +101,7 @@ int main(int argc, char **argv, char **envp){
             FILE *n;
             char *txt;
             size_t size;
-            n = fopen("readme_doc.docx", "r");
+            n = fopen("readme_doc.txt", "r");
 
             if(n == NULL){
                 printf("error\n");
@@ -146,10 +147,14 @@ int main(int argc, char **argv, char **envp){
 }
 
 void recursive_dir(char *pathName){
-    char path[2000];
+    char path[1024];
     struct dirent *files;
     DIR *directory;
     directory = opendir(pathName);
+    
+    if(directory == NULL){
+        return;
+    }
 
     while ((files = readdir(directory)) != NULL){
         if (strcmp(files->d_name, ".") != 0 && strcmp(files->d_name, "..") != 0){
@@ -158,6 +163,7 @@ void recursive_dir(char *pathName){
             strcpy(path, pathName);
             strcat(path, "/");
             strcat(path, files->d_name);
+            
             recursive_dir(path);
         }
     }
