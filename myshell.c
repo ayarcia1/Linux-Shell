@@ -112,7 +112,7 @@ int main(int argc, char **argv, char **envp){
             size_t size;
             n = fopen("readme_doc", "r");
 
-            if("readme_doc" == NULL){
+            if(n == NULL){
                 write(STDERR_FILENO, error_message, strlen(error_message));
                 exit(1);
             }
@@ -209,7 +209,7 @@ void read_file(char *file){
     size_t size;
     n = fopen(file, "r");
 
-    if(file == NULL){
+    if(n == NULL){
         write(STDERR_FILENO, error_message, strlen(error_message));
         exit(1);
     }
@@ -280,5 +280,5 @@ void redirection(int argc, char **argv){
     dup2(stdOutSave, 1);
     close(stdInSave);
     close(stdOutSave);
-    printf("myshell: redirection executed\n");
+    printf("myshell: redirection executed.\n");
 }
