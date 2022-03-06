@@ -3,11 +3,18 @@
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
-#include "myshell.h"
+#include <fcntl.h>
 void recursive_dir(char *pathname);
+void redirection(int argc, char **argv);
 
 int main(int argc, char **argv, char **envp){
     const char *error_message = "myshell: error, please try again.\n";
+    int i;
+
+    if(argc<2){
+        write(STDERR_FILENO, error_message, strlen(error_message));
+	    exit(1);
+    }
 
     if (strcmp(argv[1], "cd")== 0){
         if(argc == 2){
@@ -16,7 +23,7 @@ int main(int argc, char **argv, char **envp){
         }
         else if(argc == 3){
             chdir(argv[2]);
-            printf("directory has been changed to %s\n", argv[2]);
+            printf("myshell: directory has been changed to %s\n", argv[2]);
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
@@ -101,11 +108,11 @@ int main(int argc, char **argv, char **envp){
             FILE *n;
             char *txt;
             size_t size;
-            n = fopen("readme_doc.txt", "r");
+            n = fopen("readme_doc", "r");
 
             if(n == NULL){
-                printf("error\n");
-                exit(0);
+                write(STDERR_FILENO, error_message, strlen(error_message));
+                exit(1);
             }
 
             while(getline(&txt, &size, n)!= -1){
@@ -114,7 +121,6 @@ int main(int argc, char **argv, char **envp){
 
 	        fclose(n);
             printf("\n");
-            return 0;
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
@@ -124,9 +130,16 @@ int main(int argc, char **argv, char **envp){
 
     if(strcmp(argv[1], "pause")== 0){
         if(argc==2){
-            printf("system has been paused, press enter to continue.\n");
-            getchar();
-            printf("system has been resumed.\n");
+            while(1){
+                printf("myshell: system has been paused, press enter to continue.\n");
+                if(getchar()){
+                    printf("myshell: system has been resumed.\n");
+                    break;
+                }
+                else{
+                    continue;
+                }
+            }
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
@@ -141,6 +154,22 @@ int main(int argc, char **argv, char **envp){
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
 	        exit(1);
+        }
+    }
+
+    if(strcmp(argv[1], "ls")== 0 && argc >= 4){
+        for(i=1; i<argc; i++){
+            if(strcmp(argv[i], "out")== 0 || strcmp(argv[i], "app")== 0){
+                redirection(argc, argv);
+            }
+        }
+    }
+    
+    if(strcmp(argv[1], "cat")== 0 && argc >= 4){
+        for(i=1; i<argc; i++){
+            if(strcmp(argv[i], "in")== 0){
+                redirection(argc, argv);
+            }
         }
     }
     return 0;
@@ -168,4 +197,62 @@ void recursive_dir(char *pathName){
         }
     }
     closedir(directory);
+}
+
+void redirection(int argc, char **argv){
+    const char *error_message = "myshell: error, please try again.\n";
+    int i, in = 0, out = 0; 
+    int in_fd, out_fd;
+    int stdOutSave = dup(0);
+    int stdInSave = dup(1);
+
+    for(i=1; i<argc; i++){
+        if(strcmp(argv[i], "in")== 0){
+            in_fd = open(argv[i+1], O_RDONLY);
+            if(in_fd == -1){
+                write(STDERR_FILENO, error_message, strlen(error_message));
+	            exit(1);
+            }
+            in++;
+        }
+        if(strcmp(argv[i], "out")== 0){
+            out_fd = open(argv[i+1], O_WRONLY | O_TRUNC | O_CREAT);
+            if(out_fd == -1){
+                write(STDERR_FILENO, error_message, strlen(error_message));
+	            exit(1);
+            }
+            out++;
+        }
+        if(strcmp(argv[i], "app")== 0){
+            out_fd = open(argv[i+1], O_WRONLY | O_APPEND | O_CREAT);
+            if(out_fd == -1){
+                write(STDERR_FILENO, error_message, strlen(error_message));
+	            exit(1);
+            }
+            out++;
+        }
+    }
+    if(in == 1){
+        dup2(in_fd, 0);
+        close(in_fd);
+        printf("myshell: input redirection executed.\n");
+        fflush(stdin);
+        in--;
+    }
+    if(out == 1){
+        dup2(out_fd, 1);
+        close(out_fd);
+        recursive_dir(".");
+        fflush(stdout);
+        out--;
+    }
+    if(in > 1 || out > 1){
+        write(STDERR_FILENO, error_message, strlen(error_message));
+	    exit(1);
+    }
+    dup2(stdInSave, 0);
+    dup2(stdOutSave, 1);
+    close(stdInSave);
+    close(stdOutSave);
+    printf("myshell: redirection executed\n");
 }
