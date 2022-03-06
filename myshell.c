@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 void recursive_dir(char *pathname);
+void read_file(char *file);
 void redirection(int argc, char **argv);
 
 int main(int argc, char **argv, char **envp){
@@ -105,12 +106,13 @@ int main(int argc, char **argv, char **envp){
 
     if(strcmp(argv[1], "help")== 0){
         if(argc==2){
+            const char *error_message = "myshell: error, please try again.\n";
             FILE *n;
             char *txt;
             size_t size;
             n = fopen("readme_doc", "r");
 
-            if(n == NULL){
+            if("readme_doc" == NULL){
                 write(STDERR_FILENO, error_message, strlen(error_message));
                 exit(1);
             }
@@ -122,6 +124,7 @@ int main(int argc, char **argv, char **envp){
 	        fclose(n);
             printf("\n");
         }
+
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
 	        exit(1);
@@ -164,7 +167,7 @@ int main(int argc, char **argv, char **envp){
             }
         }
     }
-    
+
     if(strcmp(argv[1], "cat")== 0 && argc >= 4){
         for(i=1; i<argc; i++){
             if(strcmp(argv[i], "in")== 0){
@@ -199,15 +202,37 @@ void recursive_dir(char *pathName){
     closedir(directory);
 }
 
+void read_file(char *file){
+    const char *error_message = "myshell: error, please try again.\n";
+    FILE *n;
+    char *txt;
+    size_t size;
+    n = fopen(file, "r");
+
+    if(file == NULL){
+        write(STDERR_FILENO, error_message, strlen(error_message));
+        exit(1);
+    }
+
+    while(getline(&txt, &size, n)!= -1){
+		printf("%s",txt);
+	}
+
+	fclose(n);
+    printf("\n");
+}
+
 void redirection(int argc, char **argv){
     const char *error_message = "myshell: error, please try again.\n";
     int i, in = 0, out = 0; 
     int in_fd, out_fd;
+    char file[100];
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
 
     for(i=1; i<argc; i++){
         if(strcmp(argv[i], "in")== 0){
+            strcpy(file, argv[i+1]);
             in_fd = open(argv[i+1], O_RDONLY);
             if(in_fd == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
@@ -235,7 +260,7 @@ void redirection(int argc, char **argv){
     if(in == 1){
         dup2(in_fd, 0);
         close(in_fd);
-        printf("myshell: input redirection executed.\n");
+        read_file(file);
         fflush(stdin);
         in--;
     }
@@ -250,6 +275,7 @@ void redirection(int argc, char **argv){
         write(STDERR_FILENO, error_message, strlen(error_message));
 	    exit(1);
     }
+    
     dup2(stdInSave, 0);
     dup2(stdOutSave, 1);
     close(stdInSave);
