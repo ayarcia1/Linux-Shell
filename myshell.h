@@ -51,7 +51,7 @@ void read_file(char *file){
 
 void redirection(int argc, char **argv){
     const char *error_message = "myshell: error, please try again.\n";
-    int i, in = 0, out = 0; 
+    int i;
     int in_fd, out_fd;
     char file[100];
     int stdOutSave = dup(0);
@@ -65,7 +65,10 @@ void redirection(int argc, char **argv){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            exit(1);
             }
-            in++;
+            dup2(in_fd, 0);
+            close(in_fd);
+            read_file(file);
+            fflush(stdin);
         }
         if(strcmp(argv[i], "out")== 0){
             out_fd = open(argv[i+1], O_WRONLY | O_TRUNC | O_CREAT, 0777);
@@ -73,7 +76,10 @@ void redirection(int argc, char **argv){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            exit(1);
             }
-            out++;
+            dup2(out_fd, 1);
+            close(out_fd);
+            recursive_dir(".");
+            fflush(stdout);
         }
         if(strcmp(argv[i], "app")== 0){
             out_fd = open(argv[i+1], O_WRONLY | O_APPEND | O_CREAT, 0777);
@@ -81,26 +87,11 @@ void redirection(int argc, char **argv){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            exit(1);
             }
-            out++;
+            dup2(out_fd, 1);
+            close(out_fd);
+            recursive_dir(".");
+            fflush(stdout);
         }
-    }
-    if(in == 1){
-        dup2(in_fd, 0);
-        close(in_fd);
-        read_file(file);
-        fflush(stdin);
-        in--;
-    }
-    if(out == 1){
-        dup2(out_fd, 1);
-        close(out_fd);
-        recursive_dir(".");
-        fflush(stdout);
-        out--;
-    }
-    if(in > 1 || out > 1){
-        write(STDERR_FILENO, error_message, strlen(error_message));
-	    exit(1);
     }
     
     dup2(stdInSave, 0);
