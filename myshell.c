@@ -10,10 +10,10 @@ int main(int argc, char **argv, char **envp){
     const char *error_message = "myshell: error, please try again.\n";
     int i;
 
-    if(argc<2){
+    /*if(argc<2){
         write(STDERR_FILENO, error_message, strlen(error_message));
 	    exit(1);
-    }
+    }*/
 
     if (strcmp(argv[1], "cd")== 0){
         if(argc == 2){
@@ -82,7 +82,7 @@ int main(int argc, char **argv, char **envp){
 
     if(strcmp(argv[1], "environ")== 0){
         int i;
-        for(i = 0; envp[i]; i++){
+        for(i=0; envp[i]; i++){
             printf("%s\n", envp[i]);
         }
     }
@@ -104,25 +104,8 @@ int main(int argc, char **argv, char **envp){
 
     if(strcmp(argv[1], "help")== 0){
         if(argc==2){
-            const char *error_message = "myshell: error, please try again.\n";
-            FILE *n;
-            char *txt;
-            size_t size;
-            n = fopen("readme_doc", "r");
-
-            if(n == NULL){
-                write(STDERR_FILENO, error_message, strlen(error_message));
-                exit(1);
-            }
-
-            while(getline(&txt, &size, n)!= -1){
-		        printf("%s",txt);
-	        }
-
-	        fclose(n);
-            printf("\n");
+            read_file("readme_doc");
         }
-
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
 	        exit(1);
@@ -171,6 +154,12 @@ int main(int argc, char **argv, char **envp){
             if(strcmp(argv[i], "in")== 0){
                 redirection(argc, argv);
             }
+        }
+    }
+
+    for(i=0; i<argc; i++){
+        if(strcmp(argv[i], "pipe")==0){
+            pipe_func(argc, argv);
         }
     }
     return 0;

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 
 void recursive_dir(char *pathName){
     char path[1024];
@@ -32,8 +33,8 @@ void recursive_dir(char *pathName){
 void read_file(char *file){
     const char *error_message = "myshell: error, please try again.\n";
     FILE *n;
-    char *txt;
-    size_t size;
+    char txt;
+
     n = fopen(file, "r");
 
     if(n == NULL){
@@ -41,8 +42,11 @@ void read_file(char *file){
         exit(1);
     }
 
-    while(getline(&txt, &size, n)!= -1){
-		printf("%s",txt);
+    txt = fgetc(n);
+
+    while(txt != EOF){
+		printf("%c", txt);
+        txt = fgetc(n);
 	}
 
 	fclose(n);
@@ -53,13 +57,11 @@ void redirection(int argc, char **argv){
     const char *error_message = "myshell: error, please try again.\n";
     int i;
     int in_fd, out_fd;
-    char file[100];
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
 
     for(i=1; i<argc; i++){
         if(strcmp(argv[i], "in")== 0){
-            strcpy(file, argv[i+1]);
             in_fd = open(argv[i+1], O_RDONLY);
             if(in_fd == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
@@ -67,7 +69,7 @@ void redirection(int argc, char **argv){
             }
             dup2(in_fd, 0);
             close(in_fd);
-            read_file(file);
+            read_file(argv[i+1]);
             fflush(stdin);
         }
         if(strcmp(argv[i], "out")== 0){
@@ -99,4 +101,57 @@ void redirection(int argc, char **argv){
     close(stdInSave);
     close(stdOutSave);
     printf("myshell: redirection executed.\n");
+}
+
+void pipe_func(int argc, char **argv){
+    const char *error_message = "myshell: error, please try again.\n";
+    int fd[2];
+    int pid;
+    if(pipe(fd) == -1){
+        write(STDERR_FILENO, error_message, strlen(error_message));
+	    exit(1);
+    }
+    if(pipe(fd) == 0){
+        pid = fork();
+        if(pid == -1){
+            write(STDERR_FILENO, error_message, strlen(error_message));
+	        exit(1);
+        }
+        else if(pid==0){
+		    close(1);
+		    dup2(fd[1], 1);
+		    close(fd[0]);
+            close(fd[1]);
+
+		    char *args[] = {"ls", "-la", NULL};
+		    execvp(args[0], args);
+        }
+        else{
+	        pid = fork();
+
+            if(pid == -1){
+                write(STDERR_FILENO, error_message, strlen(error_message));
+	            exit(1);
+            }
+
+	        if(pid == 0){
+		        close(0);
+		        dup2(fd[0], 0);
+		        close(fd[1]);
+                close(fd[0]);
+
+		        char *args[] = {"grep", "fork", NULL};
+		        if(execvp(args[0], args)==-1){
+			        write(STDERR_FILENO, error_message, strlen(error_message));
+	                exit(1);
+		        }
+	        }
+	        else{
+                close(fd[0]);
+                close(fd[1]);
+		        waitpid(pid, NULL, 0);
+                printf("myshell: pipe has been executed\n");
+            }
+        }
+    }
 }
