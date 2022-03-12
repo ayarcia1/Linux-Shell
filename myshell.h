@@ -106,51 +106,56 @@ void redirection(int argc, char **argv){
 void pipe_func(int argc, char **argv){
     const char *error_message = "myshell: error, please try again.\n";
     int fd[2];
-    int pid;
-    if(pipe(fd) == -1){
-        write(STDERR_FILENO, error_message, strlen(error_message));
-	    exit(1);
-    }
-    if(pipe(fd) == 0){
-        pid = fork();
-        if(pid == -1){
-            write(STDERR_FILENO, error_message, strlen(error_message));
-	        exit(1);
-        }
-        else if(pid==0){
-		    close(1);
-		    dup2(fd[1], 1);
-		    close(fd[0]);
-            close(fd[1]);
-
-		    char *args[] = {"ls", "-la", NULL};
-		    execvp(args[0], args);
-        }
-        else{
-	        pid = fork();
-
-            if(pid == -1){
+    int pid, pid2;
+    int i;
+    for(i=0; i<argc; i++){
+        if(strcmp(argv[i], "pipe") == 0){
+            if(pipe(fd) == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            exit(1);
             }
+            if(pipe(fd) == 0){
+                pid = fork();
+                if(pid == -1){
+                write(STDERR_FILENO, error_message, strlen(error_message));
+	            exit(1);
+                }
+                else if(pid ==0 ){
+		            close(1);
+		            dup2(fd[1], 1);
+		            close(fd[0]);
+                    close(fd[1]);
 
-	        if(pid == 0){
-		        close(0);
-		        dup2(fd[0], 0);
-		        close(fd[1]);
-                close(fd[0]);
+		            char *args[] = {"ls", "-la", NULL};
+		            execvp(args[0], args);
+                }
 
-		        char *args[] = {"grep", "fork", NULL};
-		        if(execvp(args[0], args)==-1){
-			        write(STDERR_FILENO, error_message, strlen(error_message));
+	            pid2 = fork();
+
+                if(pid2 == -1){
+                    write(STDERR_FILENO, error_message, strlen(error_message));
 	                exit(1);
-		        }
-	        }
-	        else{
-                close(fd[0]);
-                close(fd[1]);
-		        waitpid(pid, NULL, 0);
-                printf("myshell: pipe has been executed\n");
+                }
+
+	            else if(pid2 == 0){
+		            close(0);
+		            dup2(fd[0], 0);
+		            close(fd[1]);
+                    close(fd[0]);
+
+		            char *args[] = {"grep", argv[i+2], NULL};
+		            if(execvp(args[0], args)==-1){
+			            write(STDERR_FILENO, error_message, strlen(error_message));
+	                    exit(1);
+		            }
+	            }
+	            else{
+                    close(fd[0]);
+                    close(fd[1]);
+                    waitpid(pid, NULL, 0);
+		            waitpid(pid2, NULL, 0);
+                    printf("myshell: pipe has been executed\n");
+                }
             }
         }
     }
