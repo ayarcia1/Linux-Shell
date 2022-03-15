@@ -1,0 +1,44 @@
+How to myshell:
+
+Built in commands:
+
+cd:
+cd command will only take 0 or 1 arguments.
+cd by itself will print the current working directory.
+cd with a directory argument after will change the current default directory to the argument inputted after the cd command.
+
+clr:
+clr will clear the contents of the bash.
+
+dir:
+dir command will take 0 or 1 arguments.
+dir by itself will print the contents of the current working directory.
+dir with a directory argument after will print the contents of the directory inputed after the dir command.
+
+path:
+path command will take 0 or more arguments.
+path arguents in this command will be added to the search path of the shell.
+
+environ:
+environ command will print the environmental variables.
+
+echo <comment>:
+echo command will take one argument.
+echo will display the comment command to the bash.
+
+help:
+help command will print a help manual to the pash.
+
+pause:
+pause command will pause the shell until enter is pressed.
+
+quit:
+quit command will exit out of the shell.
+
+I/O Redirection:
+
+
+Piping:
+
+
+Background Execution:
