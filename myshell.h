@@ -68,7 +68,7 @@ int background(int argc, char **argv, int *bg){
 
 void redirection(int argc, char **argv){
     const char *error_message = "myshell: an error has occured.\n";
-    int i, pid, bg = 0;
+    int i, pid, bg = 0, count = 0;
     int in_fd, out_fd;
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
@@ -86,6 +86,7 @@ void redirection(int argc, char **argv){
             close(in_fd);
             read_file(argv[i+1]);
             fflush(stdin);
+            count++;
         }
 
         if(strcmp(argv[i], "out")== 0){
@@ -105,6 +106,7 @@ void redirection(int argc, char **argv){
                 char *args[] = {"ls", "-la", "out", argv[i+1], NULL};
 		        execvp(args[0], args);
                 fflush(stdout);
+                count++;
             }
         }
 
@@ -125,10 +127,11 @@ void redirection(int argc, char **argv){
                 char *args[] = {"ls", "-la", "app", argv[i+1], NULL};
 		        execvp(args[0], args);
                 fflush(stdout);
+                count++;
             }
         }
     }
-    if(bg == 0){
+    if(bg == 0 && count > 0){
         dup2(stdInSave, 0);
         dup2(stdOutSave, 1);
         close(stdInSave);
@@ -136,7 +139,7 @@ void redirection(int argc, char **argv){
         waitpid(pid, NULL, 0);
         printf("myshell: redirection executed.\n");
     }
-    if(bg > 0){
+    if(bg > 0 && count > 0){
         dup2(stdInSave, 0);
         dup2(stdOutSave, 1);
         close(stdInSave);
