@@ -84,7 +84,7 @@ int redirection(int argc, char **argv){
     background(argc, argv, &bg);
 
     for(i=1; i<argc; i++){
-        if(strcmp(argv[i], "<")== 0){
+        if(strcmp(argv[i], "<") == 0){
             in_fd = open(argv[i+1], O_RDONLY);
             if(in_fd == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
@@ -97,7 +97,7 @@ int redirection(int argc, char **argv){
             count++;
         }
 
-        if(strcmp(argv[i], ">")== 0){
+        if(strcmp(argv[i], ">") == 0){
             pid = fork();
             if(pid == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
@@ -111,9 +111,9 @@ int redirection(int argc, char **argv){
                 }
                 dup2(out_fd, 1);
                 close(out_fd);
-                char *args[] = {"ls", "-la", ">", recursive_dir(argv, "."), NULL};
+                char *args[] = {"ls", "-la", recursive_dir(argv, "."), NULL};
                 execvp(args[0], args);
-                if(execvp(args[0], args)==-1){
+                if(execvp(args[0], args) == -1){
                     write(STDERR_FILENO, error_message, strlen(error_message));
                     return 1;
                 }
@@ -122,7 +122,7 @@ int redirection(int argc, char **argv){
             }
         }
 
-        if(strcmp(argv[i], ">>")== 0){
+        if(strcmp(argv[i], ">>") == 0){
             pid = fork();
             if(pid == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
@@ -136,9 +136,9 @@ int redirection(int argc, char **argv){
                 }
                 dup2(out_fd, 1);
                 close(out_fd);
-                char *args[] = {"ls", "-la", ">>", recursive_dir(argv, "."), NULL};
+                char *args[] = {"ls", "-la", recursive_dir(argv, "."), NULL};
 		        execvp(args[0], args);
-                if(execvp(args[0], args)==-1){
+                if(execvp(args[0], args) == -1){
 			        write(STDERR_FILENO, error_message, strlen(error_message));
                     return 1;
 		        }
