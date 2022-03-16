@@ -6,25 +6,25 @@
 #include <fcntl.h>
 #include "myshell.h"
 int built_in(int argc, char **argv, char **envp);
-void parse_line(int argc, char **argv);
+void parse_line(int *argc, char **argv);
 
 int main(int argc, char **argv, char **envp){
     printf("Welcome to MyShell!\n");
     printf("MyShell: ");
-    parse_line(argc, argv);
+    parse_line(&argc, argv);
 
     while(1){
         built_in(argc, argv, envp);
         redirection(argc, argv);
         pipe_func(argc, argv);
         printf("MyShell: ");
-        parse_line(argc, argv);
+        parse_line(&argc, argv);
     }
 }
 
-void parse_line(int argc, char **argv){
+void parse_line(int *argc, char **argv){
     int i = 1;
-    argc = 1;
+    *argc = 1;
     char *line;
     size_t size = 100;
     line = (char*) malloc (size);
@@ -36,20 +36,15 @@ void parse_line(int argc, char **argv){
     while(token != NULL){
         argv[i] = token;
         i++;
-        argc++;
+        *argc+=1;
         token = strtok(NULL, " \n");
     }
-    printf("%s\n", argv[1]);
-    printf("%d\n", argc);
 }
 
 
 int built_in(int argc, char **argv, char **envp){
     const char *error_message = "myshell: an error has occured.\n";
-    //argc wont update outside parse_line funtion
-    argc = 2;
-    printf("%s\n", argv[1]);
-    printf("%d\n", argc);
+
     if (strcmp(argv[1], "cd") == 0){
         if(argc == 2){
             char path[100];
@@ -166,7 +161,7 @@ int built_in(int argc, char **argv, char **envp){
         }
     }
 
-    if(strcmp(argv[1], "quit") == 0){
+    if(strcmp(argv[1], "exit") == 0){
         if(argc==2){
             exit(0);
         }

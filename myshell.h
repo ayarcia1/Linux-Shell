@@ -72,7 +72,6 @@ int redirection(int argc, char **argv){
     int in_fd, out_fd;
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
-    argc = 5;
 
     background(argc, argv, &bg);
 
@@ -112,7 +111,6 @@ int redirection(int argc, char **argv){
 		        }
                 fflush(stdout);
                 count++;
-                argv[i] = NULL;
             }
         }
 
