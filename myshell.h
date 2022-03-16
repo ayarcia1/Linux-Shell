@@ -166,7 +166,6 @@ int redirection(int argc, char **argv){
         dup2(stdOutSave, 1);
         close(stdInSave);
         close(stdOutSave);
-        waitpid(pid, NULL, 0);
         printf("myshell: process running in the background.\n");
     }
     return 1;

@@ -1,44 +1,52 @@
-How to myshell:
-
-Built in commands:
-
+MyShell Help Manual
+-------------------------------------------------------------------
+Contents:
+1. Built in Commands
+2. I/O Redirection
+3. Piping
+4. Background Execution
+-------------------------------------------------------------------
+1. Built in commands:
 cd:
-cd command will only take 0 or 1 arguments.
-cd by itself will print the current working directory.
-cd with a directory argument after will change the current default directory to the argument inputted after the cd command.
-
+	cd command will only take 0 or 1 arguments.
+		- cd by itself will print the current working directory.
+		- cd with a directory argument after will change the current default directory to the argument inputted after the cd command.
 clr:
-clr will clear the contents of the bash.
-
+	clr will clear the contents of the bash.
 dir:
-dir command will take 0 or 1 arguments.
-dir by itself will print the contents of the current working directory.
-dir with a directory argument after will print the contents of the directory inputed after the dir command.
-
+	dir command takes 0 or 1 arguments.
+		- dir with 0 arguments will print the contents of the current working directory.
+		- dir with 1 directory argument after will print the contents of the directory inputed after the dir command.
 path:
-path command will take 0 or more arguments.
-path arguents in this command will be added to the search path of the shell.
-
+	path command takes 0 or more arguments.
+		- path with 0 arguments will set path to "".
+		- path arguents in this command will be added to the search path of the shell.
 environ:
-environ command will print the environmental variables.
-
+	environ command will print the environmental variables.	
 echo <comment>:
-echo command will take one argument.
-echo will display the comment command to the bash.
-
+	echo will display the comment to the bash.
 help:
-help command will print a help manual to the pash.
-
+	help command will print a help manual to the pash.
 pause:
-pause command will pause the shell until enter is pressed.
-
+	pause command will pause the shell until enter is pressed.
 exit:
-exit command will exit out of the shell.
-
-I/O Redirection:
-
-
-Piping:
-
-
-Background Execution:
+	exit command will exit out of the shell.
+-------------------------------------------------------------------
+2. I/O Redirection:
+	< - input redirection from the keyboard to a file.
+	> - output redirection to a file. Replaces the file if it exists.
+	>> - output redirection to a file. Appends to the file if it exitsts.
+	Example:
+	ls -la > output.txt
+	ls -la >> output.txt
+	cat < output.txt
+-------------------------------------------------------------------
+3. Piping:
+	| - takes output from left side of pipe (|) and uses it as input for the right side.
+	Example:
+	ls -la | grep myshell.c
+-------------------------------------------------------------------
+4. Background Execution:
+	& - runs a process in the background of myshell.
+	Example:
+	ls -la > output.txt &
