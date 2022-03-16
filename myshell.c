@@ -1,3 +1,7 @@
+//Name: Arif Ayarci
+//Lab 2: Shell Program
+//Date: 3/23/2022
+//Section: CIS-3207-01
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,7 +84,7 @@ int built_in(int argc, char **argv, char **envp){
                 return 1;
             }
             printf("[Current Directory]\n");
-            recursive_dir(".");
+            recursive_dir(argv, ".");
         }
         else if(argc==3){
             directory = opendir(argv[2]);
@@ -89,7 +93,7 @@ int built_in(int argc, char **argv, char **envp){
                 return 1;
             }
             printf("%s\n", argv[2]);
-            recursive_dir(argv[2]);
+            recursive_dir(argv, argv[2]);
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
@@ -170,6 +174,5 @@ int built_in(int argc, char **argv, char **envp){
             return 1;
         }
     }
-
     return 1;
 }

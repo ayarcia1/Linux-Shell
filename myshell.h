@@ -7,28 +7,36 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-void recursive_dir(char *pathName){
+char *recursive_dir(char **argv, char *path_name){
     char path[1024];
     struct dirent *files;
     DIR *directory;
-    directory = opendir(pathName);
+    directory = opendir(path_name);
     
     if(directory == NULL){
-        return;
+        return NULL;
     }
 
-    while ((files = readdir(directory)) != NULL){
-        if (strcmp(files->d_name, ".") != 0 && strcmp(files->d_name, "..") != 0){
+    while((files = readdir(directory)) != NULL){
+        if(strcmp(files->d_name, ".") != 0 && strcmp(files->d_name, "..") != 0 && strcmp(argv[1], "dir") == 0){
             printf("%s\n", files->d_name);
 
-            strcpy(path, pathName);
+            strcpy(path, path_name);
             strcat(path, "/");
             strcat(path, files->d_name);
             
-            recursive_dir(path);
+            recursive_dir(argv, path);
+        }
+        if(strcmp(files->d_name, ".") != 0 && strcmp(files->d_name, "..") != 0 && strcmp(argv[1], "dir") != 0){
+            strcpy(path, path_name);
+            strcat(path, "/");
+            strcat(path, files->d_name);
+            
+            recursive_dir(argv, path);
         }
     }
     closedir(directory);
+    return path_name;
 }
 
 void read_file(char *file){
@@ -70,6 +78,9 @@ int redirection(int argc, char **argv){
     const char *error_message = "myshell: an error has occured.\n";
     int i, pid, bg = 0, count = 0;
     int in_fd, out_fd;
+    DIR *directory;
+    struct dirent *files;
+    directory = opendir(".");
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
 
@@ -90,28 +101,31 @@ int redirection(int argc, char **argv){
         }
 
         if(strcmp(argv[i], ">")== 0){
-            pid = fork();
-            if(pid == -1){
-                write(STDERR_FILENO, error_message, strlen(error_message));
-	            return 1;
-            }
-            else if(pid == 0){
-                out_fd = open(argv[i+1], O_WRONLY | O_TRUNC | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
-                if(out_fd == -1){
+            while((files = readdir(directory)) != NULL){
+                pid = fork();
+                if(pid == -1){
                     write(STDERR_FILENO, error_message, strlen(error_message));
                     return 1;
                 }
-                dup2(out_fd, 1);
-                close(out_fd);
-                char *args[] = {"ls", "-la", ">", argv[i+1], NULL};
-		        execvp(args[0], args);
-                if(execvp(args[0], args)==-1){
-			        write(STDERR_FILENO, error_message, strlen(error_message));
-                    return 1;
-		        }
-                fflush(stdout);
-                count++;
+                else if(pid == 0){
+                    out_fd = open(argv[i+1], O_WRONLY | O_TRUNC | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+                    if(out_fd == -1){
+                        write(STDERR_FILENO, error_message, strlen(error_message));
+                        return 1;
+                    }
+                    dup2(out_fd, 1);
+                    close(out_fd);
+                    char *args[] = {"ls", "-la", ">", recursive_dir(argv, "."), NULL};
+                    execvp(args[0], args);
+                    if(execvp(args[0], args)==-1){
+                        write(STDERR_FILENO, error_message, strlen(error_message));
+                        return 1;
+                    }
+                    fflush(stdout);
+                    count++;
+                }
             }
+            closedir(directory);
         }
 
         if(strcmp(argv[i], ">>")== 0){
@@ -128,7 +142,7 @@ int redirection(int argc, char **argv){
                 }
                 dup2(out_fd, 1);
                 close(out_fd);
-                char *args[] = {"ls", "-la", ">>", argv[i+1], NULL};
+                char *args[] = {"ls", "-la", ">>", recursive_dir(argv, "."), NULL};
 		        execvp(args[0], args);
                 if(execvp(args[0], args)==-1){
 			        write(STDERR_FILENO, error_message, strlen(error_message));
@@ -165,7 +179,7 @@ int pipe_func(int argc, char **argv){
     
     background(argc, argv, &bg);
 
-    for(i=0; i<argc; i++){
+    for(i=1; i<argc; i++){
         if(strcmp(argv[i], "|") == 0){
             if(pipe(fd) == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
