@@ -78,9 +78,6 @@ int redirection(int argc, char **argv){
     const char *error_message = "myshell: an error has occured.\n";
     int i, pid, bg = 0, count = 0;
     int in_fd, out_fd;
-    DIR *directory;
-    struct dirent *files;
-    directory = opendir(".");
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
 
@@ -101,31 +98,28 @@ int redirection(int argc, char **argv){
         }
 
         if(strcmp(argv[i], ">")== 0){
-            while((files = readdir(directory)) != NULL){
-                pid = fork();
-                if(pid == -1){
+            pid = fork();
+            if(pid == -1){
+                write(STDERR_FILENO, error_message, strlen(error_message));
+                return 1;
+            }
+            else if(pid == 0){
+                out_fd = open(argv[i+1], O_WRONLY | O_TRUNC | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+                if(out_fd == -1){
                     write(STDERR_FILENO, error_message, strlen(error_message));
                     return 1;
                 }
-                else if(pid == 0){
-                    out_fd = open(argv[i+1], O_WRONLY | O_TRUNC | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
-                    if(out_fd == -1){
-                        write(STDERR_FILENO, error_message, strlen(error_message));
-                        return 1;
-                    }
-                    dup2(out_fd, 1);
-                    close(out_fd);
-                    char *args[] = {"ls", "-la", ">", recursive_dir(argv, "."), NULL};
-                    execvp(args[0], args);
-                    if(execvp(args[0], args)==-1){
-                        write(STDERR_FILENO, error_message, strlen(error_message));
-                        return 1;
-                    }
-                    fflush(stdout);
-                    count++;
+                dup2(out_fd, 1);
+                close(out_fd);
+                char *args[] = {"ls", "-la", ">", recursive_dir(argv, "."), NULL};
+                execvp(args[0], args);
+                if(execvp(args[0], args)==-1){
+                    write(STDERR_FILENO, error_message, strlen(error_message));
+                    return 1;
                 }
+                fflush(stdout);
+                count++;
             }
-            closedir(directory);
         }
 
         if(strcmp(argv[i], ">>")== 0){
