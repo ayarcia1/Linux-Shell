@@ -168,7 +168,7 @@ int pipe_func(int argc, char **argv){
     background(argc, argv, &bg);
 
     for(i=0; i<argc; i++){
-        if(strcmp(argv[i], "pipe") == 0){
+        if(strcmp(argv[i], "|") == 0){
             if(pipe(fd) == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            return 1;
