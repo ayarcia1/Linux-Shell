@@ -5,23 +5,51 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include "myshell.h"
-void built_in(int argc, char **argv, char **envp);
+int built_in(int argc, char **argv, char **envp);
+void parse_line(int argc, char **argv);
 
 int main(int argc, char **argv, char **envp){
+    printf("Welcome to MyShell!\n");
+    printf("MyShell: ");
+    parse_line(argc, argv);
 
-    if(argc<2){
-        printf("Welcome to myshell!\n");
-        return 1;
+    while(1){
+        built_in(argc, argv, envp);
+        redirection(argc, argv);
+        pipe_func(argc, argv);
+        printf("MyShell: ");
+        parse_line(argc, argv);
     }
-    built_in(argc, argv, envp);
-    redirection(argc, argv);
-    pipe_func(argc, argv);
+}
+
+void parse_line(int argc, char **argv){
+    int i = 1;
+    argc = 1;
+    char *line;
+    size_t size = 100;
+    line = (char*) malloc (size);
+    char **string = &line;
+
+    getline(string, &size, stdin);
+    char *token = strtok(line, " \n");
+
+    while(token != NULL){
+        argv[i] = token;
+        i++;
+        argc++;
+        token = strtok(NULL, " \n");
+    }
+    printf("%s\n", argv[1]);
+    printf("%d\n", argc);
 }
 
 
-void built_in(int argc, char **argv, char **envp){
+int built_in(int argc, char **argv, char **envp){
     const char *error_message = "myshell: an error has occured.\n";
-
+    //argc wont update outside parse_line funtion
+    argc = 2;
+    printf("%s\n", argv[1]);
+    printf("%d\n", argc);
     if (strcmp(argv[1], "cd") == 0){
         if(argc == 2){
             char path[100];
@@ -33,7 +61,7 @@ void built_in(int argc, char **argv, char **envp){
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
-            exit(1);
+            return 1;
         }
     }
 
@@ -43,7 +71,7 @@ void built_in(int argc, char **argv, char **envp){
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
-            exit(1);
+            return 1;
         }
     }
 
@@ -54,7 +82,7 @@ void built_in(int argc, char **argv, char **envp){
             directory = opendir(".");
             if(directory == NULL){
                 write(STDERR_FILENO, error_message, strlen(error_message));
-                exit(1);
+                return 1;
             }
             printf("[Current Directory]\n");
             recursive_dir(".");
@@ -63,14 +91,14 @@ void built_in(int argc, char **argv, char **envp){
             directory = opendir(argv[2]);
             if(directory == NULL){
                 write(STDERR_FILENO, error_message, strlen(error_message));
-                exit(1);
+                return 1;
             }
-            printf("%s/n", argv[2]);
+            printf("%s\n", argv[2]);
             recursive_dir(argv[2]);
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
-            exit(1);
+            return 1;
         }
     }
 
@@ -83,7 +111,7 @@ void built_in(int argc, char **argv, char **envp){
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
-            exit(1);
+            return 1;
         }
     }
 
@@ -105,7 +133,7 @@ void built_in(int argc, char **argv, char **envp){
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
-            exit(1);
+            return 1;
         }
     }
 
@@ -115,7 +143,7 @@ void built_in(int argc, char **argv, char **envp){
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
-            exit(1);
+            return 1;
         }
     }
 
@@ -134,7 +162,7 @@ void built_in(int argc, char **argv, char **envp){
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
-            exit(1);
+            return 1;
         }
     }
 
@@ -144,7 +172,9 @@ void built_in(int argc, char **argv, char **envp){
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
-            exit(1);
+            return 1;
         }
     }
+
+    return 1;
 }

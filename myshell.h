@@ -59,28 +59,29 @@ int background(int argc, char **argv, int *bg){
     *bg = 0;
 
     for(i=1; i<argc; i++){
-        if(strcmp(argv[i], "and") == 0){
+        if(strcmp(argv[i], "&") == 0){
             *bg += 1;
         }
     }
     return *bg;
 }
 
-void redirection(int argc, char **argv){
+int redirection(int argc, char **argv){
     const char *error_message = "myshell: an error has occured.\n";
     int i, pid, bg = 0, count = 0;
     int in_fd, out_fd;
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
+    argc = 5;
 
     background(argc, argv, &bg);
 
     for(i=1; i<argc; i++){
-        if(strcmp(argv[i], "in")== 0){
+        if(strcmp(argv[i], "<")== 0){
             in_fd = open(argv[i+1], O_RDONLY);
             if(in_fd == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
-	            exit(1);
+	            return 1;
             }
             dup2(in_fd, 0);
             close(in_fd);
@@ -89,43 +90,52 @@ void redirection(int argc, char **argv){
             count++;
         }
 
-        if(strcmp(argv[i], "out")== 0){
+        if(strcmp(argv[i], ">")== 0){
             pid = fork();
             if(pid == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
-	            exit(1);
+	            return 1;
             }
             else if(pid == 0){
                 out_fd = open(argv[i+1], O_WRONLY | O_TRUNC | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
                 if(out_fd == -1){
                     write(STDERR_FILENO, error_message, strlen(error_message));
-                    exit(1);
+                    return 1;
                 }
                 dup2(out_fd, 1);
                 close(out_fd);
-                char *args[] = {"ls", "-la", "out", argv[i+1], NULL};
+                char *args[] = {"ls", "-la", ">", argv[i+1], NULL};
 		        execvp(args[0], args);
+                if(execvp(args[0], args)==-1){
+			        write(STDERR_FILENO, error_message, strlen(error_message));
+                    return 1;
+		        }
                 fflush(stdout);
                 count++;
+                argv[i] = NULL;
             }
         }
 
-        if(strcmp(argv[i], "app")== 0){
+        if(strcmp(argv[i], ">>")== 0){
             pid = fork();
             if(pid == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
-	            exit(1);
+	            return 1;
             }
             else if(pid == 0){
                 out_fd = open(argv[i+1], O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
                 if(out_fd == -1){
                     write(STDERR_FILENO, error_message, strlen(error_message));
-                    exit(1);
+                    return 1;
                 }
                 dup2(out_fd, 1);
                 close(out_fd);
-                char *args[] = {"ls", "-la", "app", argv[i+1], NULL};
+                char *args[] = {"ls", "-la", ">>", argv[i+1], NULL};
 		        execvp(args[0], args);
+                if(execvp(args[0], args)==-1){
+			        write(STDERR_FILENO, error_message, strlen(error_message));
+                    return 1;
+		        }
                 fflush(stdout);
                 count++;
             }
@@ -147,9 +157,10 @@ void redirection(int argc, char **argv){
         waitpid(pid, NULL, 0);
         printf("myshell: process running in the background.\n");
     }
+    return 1;
 }
 
-void pipe_func(int argc, char **argv){
+int pipe_func(int argc, char **argv){
     const char *error_message = "myshell: an error has occured.\n";
     int fd[2];
     int pid, i, bg = 0;
@@ -160,7 +171,7 @@ void pipe_func(int argc, char **argv){
         if(strcmp(argv[i], "pipe") == 0){
             if(pipe(fd) == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
-	            exit(1);
+	            return 1;
             }
 
             if(pipe(fd) == 0){
@@ -168,7 +179,7 @@ void pipe_func(int argc, char **argv){
 
                 if(pid == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
-	            exit(1);
+	            return 1;
                 }
 
                 else if(pid == 0){
@@ -185,7 +196,7 @@ void pipe_func(int argc, char **argv){
 
                     if(pid == -1){
                         write(STDERR_FILENO, error_message, strlen(error_message));
-	                    exit(1);
+	                    return 1;
                     }
 
 	                else if(pid == 0){
@@ -197,7 +208,7 @@ void pipe_func(int argc, char **argv){
 		                char *args[] = {"grep", argv[i+2], NULL};
 		                if(execvp(args[0], args)==-1){
 			                write(STDERR_FILENO, error_message, strlen(error_message));
-	                        exit(1);
+	                        return 1;
 		                }
 	                }
 	                else{
@@ -217,4 +228,5 @@ void pipe_func(int argc, char **argv){
             }
         }
     }
+    return 1;
 }
