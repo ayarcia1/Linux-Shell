@@ -14,14 +14,14 @@ void parse_line(int *argc, char **argv);
 
 int main(int argc, char **argv, char **envp){
     printf("Welcome to MyShell!\n");
-    printf("MyShell: ");
+    printf(">MyShell: ");
     parse_line(&argc, argv);
 
     while(1){
         built_in(argc, argv, envp);
         redirection(argc, argv);
         pipe_func(argc, argv);
-        printf("MyShell: ");
+        printf(">MyShell: ");
         parse_line(&argc, argv);
     }
 }
@@ -40,7 +40,7 @@ void parse_line(int *argc, char **argv){
     while(token != NULL){
         argv[i] = token;
         i++;
-        *argc+=1;
+        *argc += 1;
         token = strtok(NULL, " \n");
     }
 }
