@@ -118,8 +118,8 @@ int redirection(int argc, char **argv){
                     return 1;
                 }
                 fflush(stdout);
-                count++;
             }
+            count++;
         }
 
         if(strcmp(argv[i], ">>") == 0){
@@ -143,8 +143,8 @@ int redirection(int argc, char **argv){
                     return 1;
 		        }
                 fflush(stdout);
-                count++;
             }
+            count++;
         }
     }
     if(bg == 0 && count > 0){
