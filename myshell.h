@@ -48,7 +48,7 @@ void read_file(char *file){
 
     if(n == NULL){
         write(STDERR_FILENO, error_message, strlen(error_message));
-        exit(1);
+        exit(0);
     }
 
     txt = fgetc(n);
@@ -77,7 +77,7 @@ int background(int argc, char **argv, int *bg){
 int redirection(int argc, char **argv){
     const char *error_message = "myshell: an error has occured.\n";
     int i, pid, bg = 0, count = 0;
-    int in_fd, out_fd;
+    int in_fd, out_fd, err_fd;
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
 
@@ -85,15 +85,45 @@ int redirection(int argc, char **argv){
 
     for(i=1; i<argc; i++){
         if(strcmp(argv[i], "<") == 0){
-            in_fd = open(argv[i+1], O_RDONLY);
-            if(in_fd == -1){
+            pid = fork();
+            if(pid == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
-	            return 1;
+                return 1;
             }
-            dup2(in_fd, 0);
-            close(in_fd);
-            read_file(argv[i+1]);
-            fflush(stdin);
+            
+            else if(pid == 0){
+                in_fd = open(argv[i+1], O_RDONLY);
+                if(in_fd == -1){
+                    write(STDERR_FILENO, error_message, strlen(error_message));
+                    return 1;
+                }
+
+                err_fd = open("stderr.txt", O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+                if(err_fd == -1){
+                    write(STDERR_FILENO, error_message, strlen(error_message));
+                    return 1;
+                }
+
+                dup2(in_fd, 0);
+                dup2(err_fd, 2);
+                close(in_fd);
+                close(err_fd);
+
+                if(strcmp(argv[1], "cat") == 0){
+                    read_file(argv[i+1]);
+                }
+
+                argv[argc] = NULL;
+                argv[i] = NULL;
+
+                execvp(argv[1], argv);
+                if(execvp(argv[1], argv) == -1){
+                    write(STDERR_FILENO, error_message, strlen(error_message));
+                    return 1;
+                }
+                fflush(stdin);
+                fflush(stderr);
+            }
             count++;
         }
 
@@ -103,21 +133,38 @@ int redirection(int argc, char **argv){
                 write(STDERR_FILENO, error_message, strlen(error_message));
                 return 1;
             }
+
             else if(pid == 0){
                 out_fd = open(argv[i+1], O_WRONLY | O_TRUNC | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
                 if(out_fd == -1){
                     write(STDERR_FILENO, error_message, strlen(error_message));
                     return 1;
                 }
+
+                err_fd = open("stderr.txt", O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+                if(err_fd == -1){
+                    write(STDERR_FILENO, error_message, strlen(error_message));
+                    return 1;
+                }
+
                 dup2(out_fd, 1);
+                dup2(err_fd, 2);
                 close(out_fd);
-                char *args[] = {"ls", "-la", recursive_dir(argv, "."), NULL};
-                execvp(args[0], args);
-                if(execvp(args[0], args) == -1){
+                close(err_fd);
+
+                if(strcmp(argv[1], "ls") == 0){
+                    argv[argc-1] = recursive_dir(argv, ".");
+                }
+
+                argv[argc] = NULL;
+
+                execvp(argv[1], argv);
+                if(execvp(argv[1], argv) == -1){
                     write(STDERR_FILENO, error_message, strlen(error_message));
                     return 1;
                 }
                 fflush(stdout);
+                fflush(stderr);
             }
             count++;
         }
@@ -128,21 +175,38 @@ int redirection(int argc, char **argv){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            return 1;
             }
+            
             else if(pid == 0){
                 out_fd = open(argv[i+1], O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
                 if(out_fd == -1){
                     write(STDERR_FILENO, error_message, strlen(error_message));
                     return 1;
                 }
-                dup2(out_fd, 1);
-                close(out_fd);
-                char *args[] = {"ls", "-la", recursive_dir(argv, "."), NULL};
-		        execvp(args[0], args);
-                if(execvp(args[0], args) == -1){
-			        write(STDERR_FILENO, error_message, strlen(error_message));
+
+                err_fd = open("stderr.txt", O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+                if(err_fd == -1){
+                    write(STDERR_FILENO, error_message, strlen(error_message));
                     return 1;
-		        }
+                }
+
+                dup2(out_fd, 1);
+                dup2(err_fd, 2);
+                close(out_fd);
+                close(err_fd);
+
+                if(strcmp(argv[1], "ls") == 0){
+                    argv[argc-1] = recursive_dir(argv, ".");
+                }
+
+                argv[argc] = NULL;
+
+                execvp(argv[1], argv);
+                if(execvp(argv[1], argv) == -1){
+                    write(STDERR_FILENO, error_message, strlen(error_message));
+                    return 1;
+                }
                 fflush(stdout);
+                fflush(stderr);
             }
             count++;
         }
@@ -193,9 +257,10 @@ int pipe_func(int argc, char **argv){
 		            close(fd[0]);
                     close(fd[1]);
 
-		            char *args[] = {"ls", "-la", NULL};
+                    char *args[] = {argv[1], argv[2], NULL};
 		            execvp(args[0], args);
                 }
+
                 else{
 	                pid = fork();
 
@@ -210,12 +275,15 @@ int pipe_func(int argc, char **argv){
 		                close(fd[1]);
                         close(fd[0]);
 
-		                char *args[] = {"grep", argv[i+2], NULL};
-		                if(execvp(args[0], args)==-1){
+                        char *args[] = {argv[4], argv[5], NULL};
+
+		                execvp(args[0], args);
+		                if(execvp(args[0], args) == -1){
 			                write(STDERR_FILENO, error_message, strlen(error_message));
 	                        return 1;
 		                }
 	                }
+
 	                else{
                         if(bg == 0){
                             close(fd[0]);
