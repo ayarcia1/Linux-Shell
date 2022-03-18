@@ -109,12 +109,7 @@ int redirection(int argc, char **argv){
                 close(in_fd);
                 close(err_fd);
 
-                if(strcmp(argv[1], "cat") == 0){
-                    read_file(argv[i+1]);
-                }
-
                 argv[argc] = NULL;
-                argv[i] = NULL;
 
                 execvp(argv[1], argv);
                 if(execvp(argv[1], argv) == -1){
@@ -233,6 +228,7 @@ int pipe_func(int argc, char **argv){
     const char *error_message = "myshell: an error has occured.\n";
     int fd[2];
     int pid, i, bg = 0;
+    int fd_err;
     
     background(argc, argv, &bg);
 
@@ -252,13 +248,20 @@ int pipe_func(int argc, char **argv){
                 }
 
                 else if(pid == 0){
-		            close(1);
+                    fd_err = open("stderr.txt", O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+                    if(fd_err == -1){
+                        write(STDERR_FILENO, error_message, strlen(error_message));
+                        return 1;
+                    }
+
+                    close(1);
 		            dup2(fd[1], 1);
+                    dup2(fd_err, 2);
 		            close(fd[0]);
                     close(fd[1]);
 
-                    char *args[] = {argv[1], argv[2], NULL};
-		            execvp(args[0], args);
+                    argv[i] = NULL;
+		            execvp(argv[1], argv);
                 }
 
                 else{
@@ -270,15 +273,21 @@ int pipe_func(int argc, char **argv){
                     }
 
 	                else if(pid == 0){
-		                close(0);
+                        fd_err = open("stderr.txt", O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+                        if(fd_err == -1){
+                            write(STDERR_FILENO, error_message, strlen(error_message));
+                            return 1;
+                        }
+
+                        close(0);
 		                dup2(fd[0], 0);
+                        dup2(fd_err, 2);
 		                close(fd[1]);
                         close(fd[0]);
 
-                        char *args[] = {argv[4], argv[5], NULL};
-
-		                execvp(args[0], args);
-		                if(execvp(args[0], args) == -1){
+                        argv[argc] = NULL;
+		                execvp(argv[1], argv);
+		                if(execvp(argv[1], argv) == -1){
 			                write(STDERR_FILENO, error_message, strlen(error_message));
 	                        return 1;
 		                }
@@ -296,6 +305,7 @@ int pipe_func(int argc, char **argv){
                             close(fd[1]);
                             printf("myshell: process running in the background.\n");
                         }
+                        fflush(stderr);
                     }
                 }
             }
