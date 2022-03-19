@@ -29,8 +29,8 @@ help:
 	help command will print a help manual to the pash.
 pause:
 	pause command will pause the shell until enter is pressed.
-exit:
-	exit command will exit out of the shell.
+quit:
+	quit command will exit out of the shell.
 -------------------------------------------------------------------
 2. I/O Redirection:
 	< - input redirection from the keyboard to a file.
