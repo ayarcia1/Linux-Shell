@@ -171,7 +171,7 @@ int built_in(int argc, char **argv, char **envp){
         }
     }
 
-    if(strcmp(argv[1], "exit") == 0){
+    if(strcmp(argv[1], "quit") == 0){
         if(argc==2){
             exit(0);
         }
