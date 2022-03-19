@@ -1,12 +1,12 @@
 MyShell Help Manual
 -------------------------------------------------------------------
 Contents:
-1. Built in Commands
+1. Built In Commands
 2. I/O Redirection
 3. Piping
 4. Background Execution
 -------------------------------------------------------------------
-1. Built in commands:
+1. Built In Commands:
 cd:
 	cd command will only take 0 or 1 arguments.
 		- cd by itself will print the current working directory.
@@ -33,20 +33,21 @@ quit:
 	quit command will exit out of the shell.
 -------------------------------------------------------------------
 2. I/O Redirection:
-	< - input redirection from the keyboard to a file.
-	> - output redirection to a file. Replaces the file if it exists.
-	>> - output redirection to a file. Appends to the file if it exitsts.
-	Example:
+	< - INPUT REDIRECTION from the keyboard to a file, reads from an existing file.
+	> - OUTPUT REDIRECTION to a file. Replaces the file if it exists. Implements dir, environ, echo, and help commands.
+	>> - OUTPUT REDIRECTION to a file. Appends to the file if it exitsts. Implements dir, environ, echo, and help commands.
+   Example:
 	ls -la > output.txt
-	ls -la >> output.txt
+	ls >> output.txt
 	cat < output.txt
+	dir > output.txt
 -------------------------------------------------------------------
 3. Piping:
-	| - takes output from left side of pipe (|) and uses it as input for the right side.
-	Example:
+	| - pipe takes output from the left side of the pipe (|) and uses it as input for the right side.
+   Example:
 	ls -la | grep myshell.c
 -------------------------------------------------------------------
 4. Background Execution:
 	& - runs a process in the background of myshell.
-	Example:
+   Example:
 	ls -la > output.txt &

@@ -22,11 +22,11 @@ int main(int argc, char **argv, char **envp){
 
         redirection(argc, argv, envp, &builtin);
 
+        pipe_func(argc, argv, &builtin);
+
         if(builtin == 0){
             built_in(argc, argv, envp);
         }
-
-        pipe_func(argc, argv);
 
         printf(">MyShell: ");
         parse_line(&argc, argv);
@@ -55,6 +55,7 @@ void parse_line(int *argc, char **argv){
 
 int built_in(int argc, char **argv, char **envp){
     const char *error_message = "myshell: an error has occured.\n";
+    int i;
 
     if(strcmp(argv[1], "cd") == 0){
         if(argc == 2){
@@ -71,7 +72,7 @@ int built_in(int argc, char **argv, char **envp){
         }
     }
 
-    if(strcmp(argv[1], "clr") == 0){
+    else if(strcmp(argv[1], "clr") == 0){
         if(argc==2){
             printf("\e[1;1H\e[2J");
         }
@@ -81,7 +82,7 @@ int built_in(int argc, char **argv, char **envp){
         }
     }
 
-    if(strcmp(argv[1], "dir") == 0){
+    else if(strcmp(argv[1], "dir") == 0){
         DIR *directory;
 
         if(argc==2){
@@ -108,7 +109,7 @@ int built_in(int argc, char **argv, char **envp){
         }
     }
 
-    if(strcmp(argv[1], "path") == 0){
+    else if(strcmp(argv[1], "path") == 0){
         if(argc>=3){
             int i;
             for(i=2; i<argc; i++){
@@ -121,14 +122,14 @@ int built_in(int argc, char **argv, char **envp){
         }
     }
 
-    if(strcmp(argv[1], "environ") == 0){
+    else if(strcmp(argv[1], "environ") == 0){
         int i;
         for(i=0; envp[i]; i++){
             printf("%s\n", envp[i]);
         }
     }
 
-    if(strcmp(argv[1], "echo") == 0){
+    else if(strcmp(argv[1], "echo") == 0){
         if(argc==2){
             printf("\n");
         }
@@ -142,7 +143,7 @@ int built_in(int argc, char **argv, char **envp){
         }
     }
 
-    if(strcmp(argv[1], "help") == 0){
+    else if(strcmp(argv[1], "help") == 0){
         if(argc==2){
             read_file("readme_doc");
         }
@@ -152,7 +153,7 @@ int built_in(int argc, char **argv, char **envp){
         }
     }
 
-    if(strcmp(argv[1], "pause") == 0){
+    else if(strcmp(argv[1], "pause") == 0){
         if(argc==2){
             while(1){
                 printf("myshell: system has been paused, press enter to continue.\n");
@@ -171,13 +172,19 @@ int built_in(int argc, char **argv, char **envp){
         }
     }
 
-    if(strcmp(argv[1], "quit") == 0){
+    else if(strcmp(argv[1], "quit") == 0){
         if(argc==2){
-            exit(0);
+            exit(1);
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
             return 1;
+        }
+    }
+
+    else{
+        for(i=1; i<argc; i++){
+            printf("myshell: \"%s\" is not a command or is implemented wrong!\n", argv[i]);
         }
     }
     return 1;

@@ -86,6 +86,10 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
 
     for(i=1; i<argc; i++){
         if(strcmp(argv[i], "<") == 0){
+            if(argc<4){
+	            return 1;
+            }
+
             pid = fork();
             if(pid == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
@@ -110,6 +114,7 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
                 close(in_fd);
                 close(err_fd);
 
+                read_file(argv[i+1]);
                 argv[argc] = NULL;
 
                 execvp(argv[1], argv);
@@ -124,6 +129,10 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
         }
 
         if(strcmp(argv[i], ">") == 0){
+            if(argc<4){
+	            return 1;
+            }
+
             pid = fork();
             if(pid == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
@@ -202,6 +211,10 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
         }
 
         if(strcmp(argv[i], ">>") == 0){
+            if(argc<4){
+	            return 1;
+            }
+
             pid = fork();
             if(pid == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
@@ -297,16 +310,22 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
     return 1;
 }
 
-int pipe_func(int argc, char **argv){
+int pipe_func(int argc, char **argv, int *builtin){
     const char *error_message = "myshell: an error has occured.\n";
     int fd[2];
     int pid, i, bg = 0;
     int fd_err;
+    *builtin = 0;
     
     background(argc, argv, &bg);
 
     for(i=1; i<argc; i++){
         if(strcmp(argv[i], "|") == 0){
+            if(argc<4){
+                write(STDERR_FILENO, error_message, strlen(error_message));
+	            return 1;
+            }
+
             if(pipe(fd) == -1){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            return 1;
@@ -379,6 +398,7 @@ int pipe_func(int argc, char **argv){
                             printf("myshell: process running in the background.\n");
                         }
                         fflush(stderr);
+                        *builtin += 1;
                     }
                 }
             }
