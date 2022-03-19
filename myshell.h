@@ -74,12 +74,13 @@ int background(int argc, char **argv, int *bg){
     return *bg;
 }
 
-int redirection(int argc, char **argv){
+int redirection(int argc, char **argv, char **envp, int *builtin){
     const char *error_message = "myshell: an error has occured.\n";
-    int i, pid, bg = 0, count = 0;
+    int i, j, pid, bg = 0, count = 0;
     int in_fd, out_fd, err_fd;
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
+    *builtin = 0;
 
     background(argc, argv, &bg);
 
@@ -147,19 +148,55 @@ int redirection(int argc, char **argv){
                 close(out_fd);
                 close(err_fd);
 
-                if(strcmp(argv[1], "ls") == 0){
-                    argv[argc-1] = recursive_dir(argv, ".");
+                if(strcmp(argv[1], "dir") == 0){
+                    recursive_dir(argv, ".");
+                    *builtin += 1;
                 }
 
-                argv[argc] = NULL;
-
-                execvp(argv[1], argv);
-                if(execvp(argv[1], argv) == -1){
-                    write(STDERR_FILENO, error_message, strlen(error_message));
-                    return 1;
+                else if(strcmp(argv[1], "echo") == 0){
+                    if(strcmp(argv[2], ">") == 0){
+                        printf("\n");
+                    }
+                    if(strcmp(argv[2], ">") != 0){
+                        for(j=2; j<argc-2; j++){
+                            printf("%s",argv[j]);
+                            printf(" ");
+                        }
+                        printf("\n");
+                    }
+                    *builtin += 1;
                 }
+
+                else if(strcmp(argv[1], "environ") == 0){
+                    for(j=0; envp[j]; j++){
+                        printf("%s\n", envp[j]);
+                    }
+                    *builtin += 1;
+                }
+
+                else if(strcmp(argv[1], "help") == 0){
+                    read_file("readme_doc");
+                    *builtin += 1;
+                }
+
+                else{
+                    if(strcmp(argv[1], "ls") == 0){
+                        argv[argc-1] = recursive_dir(argv, ".");
+                    }
+
+                    argv[argc] = NULL;
+
+                    execvp(argv[1], argv);
+                    if(execvp(argv[1], argv) == -1){
+                        write(STDERR_FILENO, error_message, strlen(error_message));
+                        return 1;
+                    }
+                }
+
                 fflush(stdout);
-                fflush(stderr);
+                if(*builtin == 0){
+                    fflush(stderr);
+                }
             }
             count++;
         }
@@ -189,19 +226,55 @@ int redirection(int argc, char **argv){
                 close(out_fd);
                 close(err_fd);
 
-                if(strcmp(argv[1], "ls") == 0){
-                    argv[argc-1] = recursive_dir(argv, ".");
+                if(strcmp(argv[1], "dir") == 0){
+                    recursive_dir(argv, ".");
+                    *builtin += 1;
                 }
 
-                argv[argc] = NULL;
-
-                execvp(argv[1], argv);
-                if(execvp(argv[1], argv) == -1){
-                    write(STDERR_FILENO, error_message, strlen(error_message));
-                    return 1;
+                else if(strcmp(argv[1], "echo") == 0){
+                    if(strcmp(argv[2], ">>") == 0){
+                        printf("\n");
+                    }
+                    if(strcmp(argv[2], ">>") != 0){
+                        for(j=2; j<argc-2; j++){
+                            printf("%s",argv[j]);
+                            printf(" ");
+                        }
+                        printf("\n");
+                    }
+                    *builtin += 1;
                 }
+
+                else if(strcmp(argv[1], "environ") == 0){
+                    for(j=0; envp[j]; j++){
+                        printf("%s\n", envp[j]);
+                    }
+                    *builtin += 1;
+                }
+
+                else if(strcmp(argv[1], "help") == 0){
+                    read_file("readme_doc");
+                    *builtin += 1;
+                }
+
+                else{
+                    if(strcmp(argv[1], "ls") == 0){
+                        argv[argc-1] = recursive_dir(argv, ".");
+                    }
+
+                    argv[argc] = NULL;
+
+                    execvp(argv[1], argv);
+                    if(execvp(argv[1], argv) == -1){
+                        write(STDERR_FILENO, error_message, strlen(error_message));
+                        return 1;
+                    }
+                }
+                
                 fflush(stdout);
-                fflush(stderr);
+                if(*builtin == 0){
+                    fflush(stderr);
+                }
             }
             count++;
         }
@@ -260,7 +333,7 @@ int pipe_func(int argc, char **argv){
 		            close(fd[0]);
                     close(fd[1]);
 
-                    argv[i] = NULL;
+                    argv[argc] = NULL;
 		            execvp(argv[1], argv);
                 }
 

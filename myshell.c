@@ -18,9 +18,16 @@ int main(int argc, char **argv, char **envp){
     parse_line(&argc, argv);
 
     while(1){
-        built_in(argc, argv, envp);
-        redirection(argc, argv);
+        int builtin = 0;
+
+        redirection(argc, argv, envp, &builtin);
+
+        if(builtin == 0){
+            built_in(argc, argv, envp);
+        }
+
         pipe_func(argc, argv);
+
         printf(">MyShell: ");
         parse_line(&argc, argv);
     }
@@ -49,7 +56,7 @@ void parse_line(int *argc, char **argv){
 int built_in(int argc, char **argv, char **envp){
     const char *error_message = "myshell: an error has occured.\n";
 
-    if (strcmp(argv[1], "cd") == 0){
+    if(strcmp(argv[1], "cd") == 0){
         if(argc == 2){
             char path[100];
             printf("%s\n", getcwd(path, sizeof(path)));
@@ -122,6 +129,9 @@ int built_in(int argc, char **argv, char **envp){
     }
 
     if(strcmp(argv[1], "echo") == 0){
+        if(argc==2){
+            printf("\n");
+        }
         if(argc>=3){
             int i;
             for(i=2; i<argc; i++){
@@ -129,10 +139,6 @@ int built_in(int argc, char **argv, char **envp){
                 printf(" ");
             }
             printf("\n");
-        }
-        else{
-            write(STDERR_FILENO, error_message, strlen(error_message));
-            return 1;
         }
     }
 
