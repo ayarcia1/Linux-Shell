@@ -13,8 +13,7 @@ int built_in(int argc, char **argv, char **envp);
 void parse_line(int *argc, char **argv);
 
 int main(int argc, char **argv, char **envp){
-    printf("Welcome to MyShell!\n");
-    printf(">MyShell: ");
+    printf("myshell>: ");
     parse_line(&argc, argv);
 
     while(1){
@@ -28,7 +27,7 @@ int main(int argc, char **argv, char **envp){
             built_in(argc, argv, envp);
         }
 
-        printf(">MyShell: ");
+        printf("myshell>: ");
         parse_line(&argc, argv);
     }
 }
@@ -64,7 +63,7 @@ int built_in(int argc, char **argv, char **envp){
         }
         else if(argc == 3){
             chdir(argv[2]);
-            printf("myshell: directory has been changed to %s\n", argv[2]);
+            printf("myshell: current working directory changed to %s\n", argv[2]);
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
@@ -110,10 +109,16 @@ int built_in(int argc, char **argv, char **envp){
     }
 
     else if(strcmp(argv[1], "path") == 0){
-        if(argc>=3){
-            int i;
+        if(argc==2){
+            setenv("PATH", "", 1);
+        }
+        else if(argc>=3){
+            setenv("PATH", "/bin", 1);
+            setenv("PATH", ":", 1);
+
             for(i=2; i<argc; i++){
                 setenv("PATH", argv[i], 1);
+                setenv("PATH", ":", 1);
             }
         }
         else{
@@ -123,9 +128,14 @@ int built_in(int argc, char **argv, char **envp){
     }
 
     else if(strcmp(argv[1], "environ") == 0){
-        int i;
-        for(i=0; envp[i]; i++){
-            printf("%s\n", envp[i]);
+        if(argc==2){
+            for(i=0; envp[i]; i++){
+                printf("%s\n", envp[i]);
+            }
+        }
+        else{
+            write(STDERR_FILENO, error_message, strlen(error_message));
+            return 1;
         }
     }
 
@@ -134,7 +144,6 @@ int built_in(int argc, char **argv, char **envp){
             printf("\n");
         }
         if(argc>=3){
-            int i;
             for(i=2; i<argc; i++){
                 printf("%s", argv[i]);
                 printf(" ");
