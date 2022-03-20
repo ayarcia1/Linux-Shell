@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-char *recursive_dir(char **argv, char *path_name){
+char *recursive_dir(char *path_name){
     char path[1024];
     struct dirent *files;
     DIR *directory;
@@ -18,21 +18,14 @@ char *recursive_dir(char **argv, char *path_name){
     }
 
     while((files = readdir(directory)) != NULL){
-        if(strcmp(files->d_name, ".") != 0 && strcmp(files->d_name, "..") != 0 && strcmp(argv[1], "dir") == 0){
+        if(strcmp(files->d_name, ".") != 0 && strcmp(files->d_name, "..") != 0){
             printf("%s\n", files->d_name);
 
             strcpy(path, path_name);
             strcat(path, "/");
             strcat(path, files->d_name);
             
-            recursive_dir(argv, path);
-        }
-        if(strcmp(files->d_name, ".") != 0 && strcmp(files->d_name, "..") != 0 && strcmp(argv[1], "dir") != 0){
-            strcpy(path, path_name);
-            strcat(path, "/");
-            strcat(path, files->d_name);
-            
-            recursive_dir(argv, path);
+            recursive_dir(path);
         }
     }
     closedir(directory);
@@ -87,6 +80,7 @@ int redirection(int argc, char **argv, char **envp, int *red){
     for(i=1; i<argc; i++){
         if(strcmp(argv[i], "<") == 0){
             *red += 1;
+
             if(argc<4){
 	            return 1;
             }
@@ -121,6 +115,7 @@ int redirection(int argc, char **argv, char **envp, int *red){
 
         if(strcmp(argv[i], ">") == 0){
             *red += 1;
+
             if(argc<4){
 	            return 1;
             }
@@ -142,7 +137,7 @@ int redirection(int argc, char **argv, char **envp, int *red){
                 close(out_fd);
 
                 if(strcmp(argv[1], "dir") == 0){
-                    recursive_dir(argv, ".");
+                    recursive_dir(".");
                     *red += 1;
                 }
 
@@ -170,9 +165,6 @@ int redirection(int argc, char **argv, char **envp, int *red){
                 }
 
                 else{
-                    if(strcmp(argv[1], "ls") == 0){
-                        argv[argc-1] = recursive_dir(argv, ".");
-                    }
                     argv[i] = NULL;
                     argv[argc] = NULL;
 
@@ -189,6 +181,7 @@ int redirection(int argc, char **argv, char **envp, int *red){
 
         if(strcmp(argv[i], ">>") == 0){
             *red += 1;
+
             if(argc<4){
 	            return 1;
             }
@@ -210,7 +203,7 @@ int redirection(int argc, char **argv, char **envp, int *red){
                 close(out_fd);
 
                 if(strcmp(argv[1], "dir") == 0){
-                    recursive_dir(argv, ".");
+                    recursive_dir(".");
                 }
 
                 else if(strcmp(argv[1], "echo") == 0){
@@ -237,10 +230,6 @@ int redirection(int argc, char **argv, char **envp, int *red){
                 }
 
                 else{
-                    if(strcmp(argv[1], "ls") == 0){
-                        argv[argc-1] = recursive_dir(argv, ".");
-                    }
-
                     argv[i] = NULL;
                     argv[argc] = NULL;
 
@@ -255,37 +244,37 @@ int redirection(int argc, char **argv, char **envp, int *red){
         }
     }
 
-    if(bg == 0 && *red > 0){
+    if(*red > 0){
         dup2(stdInSave, 0);
         dup2(stdOutSave, 1);
         close(stdInSave);
         close(stdOutSave);
-        waitpid(pid, NULL, 0);
+        wait(&pid);
+    }
+
+    if(bg == 0 && *red > 0){
         printf("myshell: redirection executed.\n");
     }
+
     if(bg > 0 && *red > 0){
-        dup2(stdInSave, 0);
-        dup2(stdOutSave, 1);
-        close(stdInSave);
-        close(stdOutSave);
         printf("myshell: process running in the background.\n");
     }
     return 1;
 }
 
-int pipe_func(int argc, char **argv, int *pipes){
+int pipe_func(int argc, char **argv, int *pi){
     const char *error_message = "myshell: an error has occured.\n";
     int fd[2];
-    int pid, i, bg = 0;
-    int fd_err;
-    *pipes = 0;
+    int pid, i, j, bg = 0;
+    *pi = 0;
     
     background(argc, argv, &bg);
 
     for(i=1; i<argc; i++){
         if(strcmp(argv[i], "|") == 0){
-            *pipes += 1;
-            if(argc<4){
+            *pi += 1;
+
+            if(argc<3){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            return 1;
             }
@@ -304,19 +293,14 @@ int pipe_func(int argc, char **argv, int *pipes){
                 }
 
                 else if(pid == 0){
-                    fd_err = open("stderr.txt", O_WRONLY | O_TRUNC | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
-                    if(fd_err == -1){
-                        write(STDERR_FILENO, error_message, strlen(error_message));
-                        return 1;
-                    }
 
                     close(1);
 		            dup2(fd[1], 1);
-                    dup2(fd_err, 2);
 		            close(fd[0]);
                     close(fd[1]);
 
-                    argv[argc] = NULL;
+                    argv[i] = NULL;
+
 		            execvp(argv[1], &argv[1]);
                 }
 
@@ -329,21 +313,19 @@ int pipe_func(int argc, char **argv, int *pipes){
                     }
 
 	                else if(pid == 0){
-                        fd_err = open("stderr.txt", O_WRONLY | O_TRUNC | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
-                        if(fd_err == -1){
-                            write(STDERR_FILENO, error_message, strlen(error_message));
-                            return 1;
-                        }
 
                         close(0);
 		                dup2(fd[0], 0);
-                        dup2(fd_err, 2);
 		                close(fd[1]);
                         close(fd[0]);
 
+                        for(j=1; j<=i; j++){
+                            argv[j] = NULL;
+                        }
                         argv[argc] = NULL;
-		                execvp(argv[1], &argv[1]);
-		                if(execvp(argv[1], &argv[1]) == -1){
+
+		                execvp(argv[i+1], &argv[i+1]);
+		                if(execvp(argv[i+1], &argv[i+1]) == -1){
 			                write(STDERR_FILENO, error_message, strlen(error_message));
 	                        return 1;
 		                }
@@ -351,15 +333,14 @@ int pipe_func(int argc, char **argv, int *pipes){
 
 	                else{
                         if(bg == 0){
-                            close(fd[0]);
-                            close(fd[1]);
-                            waitpid(pid, NULL, 0);
+                            wait(&pid);
                             printf("myshell: pipe has been executed\n");
                         }
+                        
                         if(bg > 0){
+                            wait(&pid);
                             printf("myshell: process running in the background.\n");
                         }
-                        fflush(stderr);
                     }
                 }
             }
@@ -391,12 +372,14 @@ int external(int argc, char **argv){
                 return 1;
             }
         }
+
         if(bg==0){
-            waitpid(pid, NULL, 0);
+            wait(&pid);
             printf("myshell: external command executed.\n");
         }
+
         if(bg>0){
-            waitpid(pid, NULL, 0);
+            wait(&pid);
             printf("myshell: process running in the background.\n");
         }
     }

@@ -25,18 +25,18 @@ int main(int argc, char **argv, char **envp){
 
     while(1){
         int red = 0;
-        int pipes = 0;
+        int pi = 0;
         int in = 0;
 
         redirection(argc, argv, envp, &red);
 
-        pipe_func(argc, argv, &pipes);
+        pipe_func(argc, argv, &pi);
 
-        if(red == 0 && pipes == 0){
+        if(red == 0 && pi == 0){
             built_in(argc, argv, envp, &in);
         }
 
-        if(red == 0 && pipes == 0 && in == 0){
+        if(red == 0 && pi == 0 && in == 0){
             external(argc, argv);
         }
 
@@ -107,7 +107,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
                 return 1;
             }
             printf("[Current Directory]\n");
-            recursive_dir(argv, ".");
+            recursive_dir(".");
         }
         else if(argc==3){
             directory = opendir(argv[2]);
@@ -116,7 +116,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
                 return 1;
             }
             printf("%s\n", argv[2]);
-            recursive_dir(argv, argv[2]);
+            recursive_dir(argv[2]);
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
@@ -190,10 +190,10 @@ int built_in(int argc, char **argv, char **envp, int *in){
 
     else if(strcmp(argv[1], "pause") == 0){
         if(argc==2){
-            while(1){
-                printf("myshell: system has been paused, press enter to continue.\n");
+            while(2){
+                printf("myshell: myshell has been paused, press enter to continue.\n");
                 if(getchar()){
-                    printf("myshell: system has been resumed.\n");
+                    printf("myshell: myshell has been resumed.\n");
                     break;
                 }
                 else{
