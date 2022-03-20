@@ -9,7 +9,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include "myshell.h"
-int built_in(int argc, char **argv, char **envp);
+int built_in(int argc, char **argv, char **envp, int *in);
 void parse_line(int *argc, char **argv);
 
 int main(int argc, char **argv, char **envp){
@@ -24,14 +24,20 @@ int main(int argc, char **argv, char **envp){
     parse_line(&argc, argv);
 
     while(1){
-        int ext = 0;
+        int red = 0;
+        int pipes = 0;
+        int in = 0;
 
-        redirection(argc, argv, envp, &ext);
+        redirection(argc, argv, envp, &red);
 
-        pipe_func(argc, argv, &ext);
+        pipe_func(argc, argv, &pipes);
 
-        if(ext == 0){
-            built_in(argc, argv, envp);
+        if(red == 0 && pipes == 0){
+            built_in(argc, argv, envp, &in);
+        }
+
+        if(red == 0 && pipes == 0 && in == 0){
+            external(argc, argv);
         }
 
         printf("myshell> ");
@@ -59,11 +65,10 @@ void parse_line(int *argc, char **argv){
 }
 
 
-int built_in(int argc, char **argv, char **envp){
+int built_in(int argc, char **argv, char **envp, int *in){
     const char *error_message = "myshell: an error has occured.\n";
     int i;
-    int bg = 0;
-    background(argc, argv, &bg);
+    *in = 0;
 
     if(strcmp(argv[1], "cd") == 0){
         if(argc == 2){
@@ -78,6 +83,7 @@ int built_in(int argc, char **argv, char **envp){
             write(STDERR_FILENO, error_message, strlen(error_message));
             return 1;
         }
+        *in += 1;
     }
 
     else if(strcmp(argv[1], "clr") == 0){
@@ -88,6 +94,7 @@ int built_in(int argc, char **argv, char **envp){
             write(STDERR_FILENO, error_message, strlen(error_message));
             return 1;
         }
+        *in += 1;
     }
 
     else if(strcmp(argv[1], "dir") == 0){
@@ -115,6 +122,7 @@ int built_in(int argc, char **argv, char **envp){
             write(STDERR_FILENO, error_message, strlen(error_message));
             return 1;
         }
+        *in += 1;
     }
 
     else if(strcmp(argv[1], "path") == 0){
@@ -140,6 +148,7 @@ int built_in(int argc, char **argv, char **envp){
             write(STDERR_FILENO, error_message, strlen(error_message));
             return 1;
         }
+        *in += 1;
     }
 
     else if(strcmp(argv[1], "environ") == 0){
@@ -152,6 +161,7 @@ int built_in(int argc, char **argv, char **envp){
             write(STDERR_FILENO, error_message, strlen(error_message));
             return 1;
         }
+        *in += 1;
     }
 
     else if(strcmp(argv[1], "echo") == 0){
@@ -165,6 +175,7 @@ int built_in(int argc, char **argv, char **envp){
             }
             printf("\n");
         }
+        *in += 1;
     }
 
     else if(strcmp(argv[1], "help") == 0){
@@ -194,6 +205,7 @@ int built_in(int argc, char **argv, char **envp){
             write(STDERR_FILENO, error_message, strlen(error_message));
             return 1;
         }
+        *in += 1;
     }
 
     else if(strcmp(argv[1], "quit") == 0){
@@ -204,14 +216,7 @@ int built_in(int argc, char **argv, char **envp){
             write(STDERR_FILENO, error_message, strlen(error_message));
             return 1;
         }
-    }
-
-    else{
-        if(bg == 0){
-            for(i=1; i<argc; i++){
-                printf("myshell: \"%s\" is not a command or is implemented wrong!\n", argv[i]);
-            }
-        }
+        *in += 1;
     }
     return 1;
 }
