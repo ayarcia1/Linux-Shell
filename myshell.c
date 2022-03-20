@@ -13,12 +13,9 @@ int built_in(int argc, char **argv, char **envp, int *in);
 void parse_line(int *argc, char **argv);
 
 int main(int argc, char **argv, char **envp){
-    int bg = 0;
+    int pid, bg = 0;
+    const char *error_message = "myshell: an error has occured\n";
     background(argc, argv, &bg);
-
-    if(bg > 0){
-        fork();
-    }
 
     printf("myshell> ");
     parse_line(&argc, argv);
@@ -28,16 +25,39 @@ int main(int argc, char **argv, char **envp){
         int pi = 0;
         int in = 0;
 
-        redirection(argc, argv, envp, &red);
+        if(bg > 0){
+            pid = fork();
+            if(pid == -1){
+                write(STDERR_FILENO, error_message, strlen(error_message));
+                return 1;
+            }
+            else if(pid == 0){
+                redirection(argc, argv, envp, &red);
 
-        pipe_func(argc, argv, &pi);
+                pipe_func(argc, argv, &pi);
 
-        if(red == 0 && pi == 0){
-            built_in(argc, argv, envp, &in);
+                if(red == 0 && pi == 0){
+                    built_in(argc, argv, envp, &in);
+                }
+
+                if(red == 0 && pi == 0 && in == 0){
+                    external(argc, argv);
+                }
+            }
         }
+        
+        else if(bg == 0){
+            redirection(argc, argv, envp, &red);
 
-        if(red == 0 && pi == 0 && in == 0){
-            external(argc, argv);
+            pipe_func(argc, argv, &pi);
+
+            if(red == 0 && pi == 0){
+                built_in(argc, argv, envp, &in);
+            }
+
+            if(red == 0 && pi == 0 && in == 0){
+                external(argc, argv);
+            }
         }
 
         printf("myshell> ");
