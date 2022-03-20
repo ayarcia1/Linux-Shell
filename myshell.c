@@ -13,21 +13,28 @@ int built_in(int argc, char **argv, char **envp);
 void parse_line(int *argc, char **argv);
 
 int main(int argc, char **argv, char **envp){
-    printf("myshell>: ");
+    int bg = 0;
+    background(argc, argv, &bg);
+
+    if(bg > 0){
+        fork();
+    }
+
+    printf("myshell> ");
     parse_line(&argc, argv);
 
     while(1){
-        int builtin = 0;
+        int ext = 0;
 
-        redirection(argc, argv, envp, &builtin);
+        redirection(argc, argv, envp, &ext);
 
-        pipe_func(argc, argv, &builtin);
+        pipe_func(argc, argv, &ext);
 
-        if(builtin == 0){
+        if(ext == 0){
             built_in(argc, argv, envp);
         }
 
-        printf("myshell>: ");
+        printf("myshell> ");
         parse_line(&argc, argv);
     }
 }
@@ -55,6 +62,8 @@ void parse_line(int *argc, char **argv){
 int built_in(int argc, char **argv, char **envp){
     const char *error_message = "myshell: an error has occured.\n";
     int i;
+    int bg = 0;
+    background(argc, argv, &bg);
 
     if(strcmp(argv[1], "cd") == 0){
         if(argc == 2){
@@ -113,13 +122,19 @@ int built_in(int argc, char **argv, char **envp){
             setenv("PATH", "", 1);
         }
         else if(argc>=3){
-            setenv("PATH", "/bin", 1);
-            setenv("PATH", ":", 1);
+            char args[1024] = "\0";
+            strcat(args, "/bin:");
 
             for(i=2; i<argc; i++){
-                setenv("PATH", argv[i], 1);
-                setenv("PATH", ":", 1);
+                strcat(args, argv[i]);
+                
+                if(strcmp(argv[i], argv[argc-1]) != 0){
+                    strcat(args, ":");
+                }
             }
+
+            setenv("PATH", args, 1);
+            printf("myshell: PATH=%s\n", getenv("PATH"));
         }
         else{
             write(STDERR_FILENO, error_message, strlen(error_message));
@@ -192,8 +207,10 @@ int built_in(int argc, char **argv, char **envp){
     }
 
     else{
-        for(i=1; i<argc; i++){
-            printf("myshell: \"%s\" is not a command or is implemented wrong!\n", argv[i]);
+        if(bg == 0){
+            for(i=1; i<argc; i++){
+                printf("myshell: \"%s\" is not a command or is implemented wrong!\n", argv[i]);
+            }
         }
     }
     return 1;

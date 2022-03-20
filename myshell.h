@@ -74,13 +74,13 @@ int background(int argc, char **argv, int *bg){
     return *bg;
 }
 
-int redirection(int argc, char **argv, char **envp, int *builtin){
+int redirection(int argc, char **argv, char **envp, int *ext){
     const char *error_message = "myshell: an error has occured.\n";
     int i, j, pid, bg = 0, count = 0;
     int in_fd, out_fd, err_fd;
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
-    *builtin = 0;
+    *ext = 0;
 
     background(argc, argv, &bg);
 
@@ -159,7 +159,7 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
 
                 if(strcmp(argv[1], "dir") == 0){
                     recursive_dir(argv, ".");
-                    *builtin += 1;
+                    *ext += 1;
                 }
 
                 else if(strcmp(argv[1], "echo") == 0){
@@ -173,19 +173,19 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
                         }
                         printf("\n");
                     }
-                    *builtin += 1;
+                    *ext += 1;
                 }
 
                 else if(strcmp(argv[1], "environ") == 0){
                     for(j=0; envp[j]; j++){
                         printf("%s\n", envp[j]);
                     }
-                    *builtin += 1;
+                    *ext += 1;
                 }
 
                 else if(strcmp(argv[1], "help") == 0){
                     read_file("readme_doc");
-                    *builtin += 1;
+                    *ext += 1;
                 }
 
                 else{
@@ -203,7 +203,7 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
                 }
 
                 fflush(stdout);
-                if(*builtin == 0){
+                if(*ext == 0){
                     fflush(stderr);
                 }
             }
@@ -241,7 +241,7 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
 
                 if(strcmp(argv[1], "dir") == 0){
                     recursive_dir(argv, ".");
-                    *builtin += 1;
+                    *ext += 1;
                 }
 
                 else if(strcmp(argv[1], "echo") == 0){
@@ -255,19 +255,19 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
                         }
                         printf("\n");
                     }
-                    *builtin += 1;
+                    *ext += 1;
                 }
 
                 else if(strcmp(argv[1], "environ") == 0){
                     for(j=0; envp[j]; j++){
                         printf("%s\n", envp[j]);
                     }
-                    *builtin += 1;
+                    *ext += 1;
                 }
 
                 else if(strcmp(argv[1], "help") == 0){
                     read_file("readme_doc");
-                    *builtin += 1;
+                    *ext += 1;
                 }
 
                 else{
@@ -285,7 +285,7 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
                 }
                 
                 fflush(stdout);
-                if(*builtin == 0){
+                if(*ext == 0){
                     fflush(stderr);
                 }
             }
@@ -310,12 +310,12 @@ int redirection(int argc, char **argv, char **envp, int *builtin){
     return 1;
 }
 
-int pipe_func(int argc, char **argv, int *builtin){
+int pipe_func(int argc, char **argv, int *ext){
     const char *error_message = "myshell: an error has occured.\n";
     int fd[2];
     int pid, i, bg = 0;
     int fd_err;
-    *builtin = 0;
+    *ext = 0;
     
     background(argc, argv, &bg);
 
@@ -398,7 +398,7 @@ int pipe_func(int argc, char **argv, int *builtin){
                             printf("myshell: process running in the background.\n");
                         }
                         fflush(stderr);
-                        *builtin += 1;
+                        *ext += 1;
                     }
                 }
             }
