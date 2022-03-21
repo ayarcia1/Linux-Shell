@@ -13,52 +13,37 @@ int built_in(int argc, char **argv, char **envp, int *in);
 void parse_line(int *argc, char **argv);
 
 int main(int argc, char **argv, char **envp){
-    int pid, bg = 0;
-    const char *error_message = "myshell: an error has occured\n";
-    background(argc, argv, &bg);
-
     printf("myshell> ");
     parse_line(&argc, argv);
 
+    while(argc==1){
+        printf("myshell> ");
+        parse_line(&argc, argv);
+    }
+
     while(1){
-        int red = 0;
+        int re = 0;
         int pi = 0;
         int in = 0;
 
-        if(bg > 0){
-            pid = fork();
-            if(pid == -1){
-                write(STDERR_FILENO, error_message, strlen(error_message));
-                return 1;
-            }
-            else if(pid == 0){
-                redirection(argc, argv, envp, &red);
+        while(argc==1){
+            printf("myshell> ");
+            parse_line(&argc, argv);
+        }
+    
+    
+        redirection(argc, argv, envp, &re);
 
-                pipe_func(argc, argv, &pi);
+        pipe_func(argc, argv, &pi);
 
-                if(red == 0 && pi == 0){
-                    built_in(argc, argv, envp, &in);
-                }
+        if(re == 0 && pi == 0){
+            built_in(argc, argv, envp, &in);
+        }
 
-                if(red == 0 && pi == 0 && in == 0){
-                    external(argc, argv);
-                }
-            }
+        if(re == 0 && pi == 0 && in == 0){
+            external(argc, argv);
         }
         
-        else if(bg == 0){
-            redirection(argc, argv, envp, &red);
-
-            pipe_func(argc, argv, &pi);
-
-            if(red == 0 && pi == 0){
-                built_in(argc, argv, envp, &in);
-            }
-
-            if(red == 0 && pi == 0 && in == 0){
-                external(argc, argv);
-            }
-        }
 
         printf("myshell> ");
         parse_line(&argc, argv);
@@ -107,7 +92,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
     }
 
     else if(strcmp(argv[1], "clr") == 0){
-        if(argc==2){
+        if(argc == 2){
             printf("\e[1;1H\e[2J");
         }
         else{
@@ -120,7 +105,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
     else if(strcmp(argv[1], "dir") == 0){
         DIR *directory;
 
-        if(argc==2){
+        if(argc == 2){
             directory = opendir(".");
             if(directory == NULL){
                 write(STDERR_FILENO, error_message, strlen(error_message));
@@ -129,7 +114,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
             printf("[Current Directory]\n");
             recursive_dir(".");
         }
-        else if(argc==3){
+        else if(argc == 3){
             directory = opendir(argv[2]);
             if(directory == NULL){
                 write(STDERR_FILENO, error_message, strlen(error_message));
@@ -146,7 +131,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
     }
 
     else if(strcmp(argv[1], "path") == 0){
-        if(argc==2){
+        if(argc == 2){
             setenv("PATH", "", 1);
         }
         else if(argc>=3){
@@ -172,7 +157,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
     }
 
     else if(strcmp(argv[1], "environ") == 0){
-        if(argc==2){
+        if(argc == 2){
             for(i=0; envp[i]; i++){
                 printf("%s\n", envp[i]);
             }
@@ -185,7 +170,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
     }
 
     else if(strcmp(argv[1], "echo") == 0){
-        if(argc==2){
+        if(argc == 2){
             printf("\n");
         }
         if(argc>=3){
@@ -199,7 +184,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
     }
 
     else if(strcmp(argv[1], "help") == 0){
-        if(argc==2){
+        if(argc == 2){
             read_file("readme_doc");
         }
         else{
@@ -209,7 +194,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
     }
 
     else if(strcmp(argv[1], "pause") == 0){
-        if(argc==2){
+        if(argc == 2){
             while(2){
                 printf("myshell: myshell has been paused, press enter to continue.\n");
                 if(getchar()){
@@ -229,7 +214,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
     }
 
     else if(strcmp(argv[1], "quit") == 0){
-        if(argc==2){
+        if(argc == 2){
             exit(1);
         }
         else{

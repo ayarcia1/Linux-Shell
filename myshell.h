@@ -67,19 +67,19 @@ int background(int argc, char **argv, int *bg){
     return *bg;
 }
 
-int redirection(int argc, char **argv, char **envp, int *red){
+int redirection(int argc, char **argv, char **envp, int *re){
     const char *error_message = "myshell: an error has occured.\n";
     int i, j, pid, bg = 0;
     int in_fd, out_fd;
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
-    *red = 0;
+    *re = 0;
 
     background(argc, argv, &bg);
 
     for(i=1; i<argc; i++){
         if(strcmp(argv[i], "<") == 0){
-            *red += 1;
+            *re += 1;
 
             if(argc<4){
 	            return 1;
@@ -90,7 +90,7 @@ int redirection(int argc, char **argv, char **envp, int *red){
                 write(STDERR_FILENO, error_message, strlen(error_message));
                 return 1;
             }
-            
+
             else if(pid == 0){
                 in_fd = open(argv[i+1], O_RDONLY);
                 if(in_fd == -1){
@@ -114,7 +114,7 @@ int redirection(int argc, char **argv, char **envp, int *red){
         }
 
         if(strcmp(argv[i], ">") == 0){
-            *red += 1;
+            *re += 1;
 
             if(argc<4){
 	            return 1;
@@ -138,7 +138,6 @@ int redirection(int argc, char **argv, char **envp, int *red){
 
                 if(strcmp(argv[1], "dir") == 0){
                     recursive_dir(".");
-                    *red += 1;
                 }
 
                 else if(strcmp(argv[1], "echo") == 0){
@@ -174,13 +173,12 @@ int redirection(int argc, char **argv, char **envp, int *red){
                         return 1;
                     }
                 }
-
                 fflush(stdout);
             }
         }
 
         if(strcmp(argv[i], ">>") == 0){
-            *red += 1;
+            *re += 1;
 
             if(argc<4){
 	            return 1;
@@ -243,21 +241,23 @@ int redirection(int argc, char **argv, char **envp, int *red){
             }
         }
     }
-
-    if(*red > 0){
+    if(*re > 0){
         dup2(stdInSave, 0);
         dup2(stdOutSave, 1);
         close(stdInSave);
         close(stdOutSave);
-        wait(&pid);
     }
 
-    if(bg == 0 && *red > 0){
+    if(bg == 0 && *re > 0){
+        for(i=0; i<*re; i++){
+            wait(&pid);
+        }
         printf("myshell: redirection executed.\n");
     }
 
-    if(bg > 0 && *red > 0){
+    if(bg > 0 && *re > 0){
         printf("myshell: process running in the background.\n");
+        kill(pid, SIGTERM);
     }
     return 1;
 }
@@ -338,7 +338,7 @@ int pipe_func(int argc, char **argv, int *pi){
                         }
                         
                         if(bg > 0){
-                            wait(&pid);
+                            kill(pid, SIGTERM);
                             printf("myshell: process running in the background.\n");
                         }
                     }
@@ -355,7 +355,7 @@ int external(int argc, char **argv){
     int bg = 0;
     background(argc, argv, &bg);
 
-    if(argc>=2){
+    if(argc >= 2){
         pid = fork();
         if(pid == -1){
             write(STDERR_FILENO, error_message, strlen(error_message));
@@ -373,13 +373,13 @@ int external(int argc, char **argv){
             }
         }
 
-        if(bg==0){
+        if(bg == 0){
             wait(&pid);
             printf("myshell: external command executed.\n");
         }
 
-        if(bg>0){
-            wait(&pid);
+        if(bg > 0){
+            kill(pid, SIGTERM);
             printf("myshell: process running in the background.\n");
         }
     }
