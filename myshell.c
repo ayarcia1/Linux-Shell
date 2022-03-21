@@ -9,8 +9,8 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include "myshell.h"
-int built_in(int argc, char **argv, char **envp, int *in);
 void parse_line(int *argc, char **argv);
+int built_in(int argc, char **argv, char **envp, int *in);
 
 int main(int argc, char **argv, char **envp){
     printf("myshell> ");
@@ -54,8 +54,8 @@ void parse_line(int *argc, char **argv){
     int i = 1;
     *argc = 1;
     char *line;
-    size_t size = 100;
-    line = (char*) malloc (size);
+    size_t size = 1024;
+    line = (char*)malloc(size);
     char **string = &line;
 
     getline(string, &size, stdin);
@@ -77,7 +77,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
 
     if(strcmp(argv[1], "cd") == 0){
         if(argc == 2){
-            char path[100];
+            char path[1024];
             printf("%s\n", getcwd(path, sizeof(path)));
         }
         else if(argc == 3){
@@ -224,4 +224,64 @@ int built_in(int argc, char **argv, char **envp, int *in){
         *in += 1;
     }
     return 1;
+}
+
+char *recursive_dir(char *path_name){
+    char path[1024];
+    struct dirent *files;
+    DIR *directory;
+    directory = opendir(path_name);
+    
+    if(directory == NULL){
+        return NULL;
+    }
+
+    while((files = readdir(directory)) != NULL){
+        if(strcmp(files->d_name, ".") != 0 && strcmp(files->d_name, "..") != 0){
+            printf("%s\n", files->d_name);
+
+            strcpy(path, path_name);
+            strcat(path, "/");
+            strcat(path, files->d_name);
+            
+            recursive_dir(path);
+        }
+    }
+    closedir(directory);
+    return path_name;
+}
+
+void read_file(char *file){
+    const char *error_message = "myshell: an error has occured.\n";
+    FILE *n;
+    char txt;
+
+    n = fopen(file, "r");
+
+    if(n == NULL){
+        write(STDERR_FILENO, error_message, strlen(error_message));
+        exit(0);
+    }
+
+    txt = fgetc(n);
+
+    while(txt != EOF){
+		printf("%c", txt);
+        txt = fgetc(n);
+	}
+
+	fclose(n);
+    printf("\n");
+}
+
+int background(int argc, char **argv, int *bg){
+    int i;
+    *bg = 0;
+
+    for(i=1; i<argc; i++){
+        if(strcmp(argv[i], "&") == 0){
+            *bg += 1;
+        }
+    }
+    return *bg;
 }

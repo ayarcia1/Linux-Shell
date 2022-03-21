@@ -4,68 +4,12 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-
-char *recursive_dir(char *path_name){
-    char path[1024];
-    struct dirent *files;
-    DIR *directory;
-    directory = opendir(path_name);
-    
-    if(directory == NULL){
-        return NULL;
-    }
-
-    while((files = readdir(directory)) != NULL){
-        if(strcmp(files->d_name, ".") != 0 && strcmp(files->d_name, "..") != 0){
-            printf("%s\n", files->d_name);
-
-            strcpy(path, path_name);
-            strcat(path, "/");
-            strcat(path, files->d_name);
-            
-            recursive_dir(path);
-        }
-    }
-    closedir(directory);
-    return path_name;
-}
-
-void read_file(char *file){
-    const char *error_message = "myshell: an error has occured.\n";
-    FILE *n;
-    char txt;
-
-    n = fopen(file, "r");
-
-    if(n == NULL){
-        write(STDERR_FILENO, error_message, strlen(error_message));
-        exit(0);
-    }
-
-    txt = fgetc(n);
-
-    while(txt != EOF){
-		printf("%c", txt);
-        txt = fgetc(n);
-	}
-
-	fclose(n);
-    printf("\n");
-}
-
-int background(int argc, char **argv, int *bg){
-    int i;
-    *bg = 0;
-
-    for(i=1; i<argc; i++){
-        if(strcmp(argv[i], "&") == 0){
-            *bg += 1;
-        }
-    }
-    return *bg;
-}
+char *recursive_dir(char *path_name);
+void read_file(char *file);
+int background(int argc, char **argv, int *bg);
 
 int redirection(int argc, char **argv, char **envp, int *re){
     const char *error_message = "myshell: an error has occured.\n";
@@ -81,7 +25,7 @@ int redirection(int argc, char **argv, char **envp, int *re){
         if(strcmp(argv[i], "<") == 0){
             *re += 1;
 
-            if(argc<4){
+            if(argc < 4){
 	            return 1;
             }
 
@@ -101,6 +45,13 @@ int redirection(int argc, char **argv, char **envp, int *re){
                 dup2(in_fd, 0);
                 close(in_fd);
 
+                for(j=1; j<argc; j++){
+                    if(strcmp(argv[j], ">") == 0 || strcmp(argv[j], ">>") == 0){
+                        argv[j] = NULL;
+                        break;
+                    }
+                }
+
                 argv[i] = NULL;
                 argv[argc] = NULL;
 
@@ -109,14 +60,16 @@ int redirection(int argc, char **argv, char **envp, int *re){
                     write(STDERR_FILENO, error_message, strlen(error_message));
                     return 1;
                 }
-                fflush(stdin);
+                if(argv[j] != NULL){
+                    fflush(stdin);
+                }
             }
         }
 
         if(strcmp(argv[i], ">") == 0){
             *re += 1;
 
-            if(argc<4){
+            if(argc < 4){
 	            return 1;
             }
 
@@ -180,7 +133,7 @@ int redirection(int argc, char **argv, char **envp, int *re){
         if(strcmp(argv[i], ">>") == 0){
             *re += 1;
 
-            if(argc<4){
+            if(argc < 4){
 	            return 1;
             }
 
@@ -267,7 +220,7 @@ int pipe_func(int argc, char **argv, int *pi){
     int fd[2];
     int pid, i, j, bg = 0;
     *pi = 0;
-    
+
     background(argc, argv, &bg);
 
     for(i=1; i<argc; i++){
@@ -353,6 +306,7 @@ int external(int argc, char **argv){
     const char *error_message = "myshell: an error has occured.\n";
     int i, pid;
     int bg = 0;
+    
     background(argc, argv, &bg);
 
     if(argc >= 2){
@@ -361,7 +315,7 @@ int external(int argc, char **argv){
             write(STDERR_FILENO, error_message, strlen(error_message));
             return 1;
         }
-        
+
         else if(pid == 0){
             argv[argc] = NULL;
             execvp(argv[1], &argv[1]);
