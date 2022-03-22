@@ -9,56 +9,94 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include "myshell.h"
-void parse_line(int *argc, char **argv);
+void parse_line(int *argc, char **argv, FILE *n);
 int built_in(int argc, char **argv, char **envp, int *in);
 
 int main(int argc, char **argv, char **envp){
-    printf("myshell> ");
-    parse_line(&argc, argv);
+    const char *error_message = "myshell: an error has occured.\n";
 
-    while(argc==1){
+    if(argc == 1){
         printf("myshell> ");
-        parse_line(&argc, argv);
+        parse_line(&argc, argv, stdin);
+
+        while(argc == 1){
+            printf("myshell> ");
+            parse_line(&argc, argv, stdin);
+        }
+
+        while(1){
+            int re = 0;
+            int pi = 0;
+            int in = 0;
+
+            while(argc == 1){
+                printf("myshell> ");
+                parse_line(&argc, argv, stdin);
+            }
+        
+            redirection(argc, argv, envp, &re);
+
+            pipe_func(argc, argv, &pi);
+
+            if(re == 0 && pi == 0){
+                built_in(argc, argv, envp, &in);
+            }
+
+            if(re == 0 && pi == 0 && in == 0){
+                external(argc, argv);
+            }
+            
+            printf("myshell> ");
+            parse_line(&argc, argv, stdin);
+        }
     }
 
-    while(1){
-        int re = 0;
-        int pi = 0;
-        int in = 0;
+    else if(argc == 2){
+        FILE *n;
 
-        while(argc==1){
-            printf("myshell> ");
-            parse_line(&argc, argv);
-        }
-    
-    
-        redirection(argc, argv, envp, &re);
-
-        pipe_func(argc, argv, &pi);
-
-        if(re == 0 && pi == 0){
-            built_in(argc, argv, envp, &in);
+        n = fopen(argv[1], "r");
+        if(n == NULL){
+            write(STDERR_FILENO, error_message, strlen(error_message));
+            exit(0);
         }
 
-        if(re == 0 && pi == 0 && in == 0){
-            external(argc, argv);
-        }
-        
+        while(feof(n) == 0){
+            int re = 0;
+            int pi = 0;
+            int in = 0;
 
-        printf("myshell> ");
-        parse_line(&argc, argv);
+            parse_line(&argc, argv, n);
+
+            redirection(argc, argv, envp, &re);
+
+            pipe_func(argc, argv, &pi);
+
+            if(re == 0 && pi == 0){
+                built_in(argc, argv, envp, &in);
+            }
+
+            if(re == 0 && pi == 0 && in == 0){
+                external(argc, argv);
+            }
+        }
+        fclose(n);
+        exit(1);
+    }
+
+    else{
+        write(STDERR_FILENO, error_message, strlen(error_message));
+        exit(1);
     }
 }
 
-void parse_line(int *argc, char **argv){
+void parse_line(int *argc, char **argv, FILE *file){
     int i = 1;
     *argc = 1;
-    char *line;
     size_t size = 1024;
-    line = (char*)malloc(size);
+    char *line = (char*)malloc(size);
     char **string = &line;
 
-    getline(string, &size, stdin);
+    getline(string, &size, file);
     char *token = strtok(line, " \n");
 
     while(token != NULL){
