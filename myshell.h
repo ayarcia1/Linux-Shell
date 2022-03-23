@@ -254,8 +254,9 @@ int pipe_func(int argc, char **argv, int *pi){
     *pi = 0;
     //call background function for "&" inputs.
     background(argc, argv, &bg);
-    
+    //iterate through argv arguments.
     for(i=1; i<argc; i++){
+        //if an argv argument contains "|".
         if(strcmp(argv[i], "|") == 0){
             *pi += 1;
             //if less than 2 arguments, print error and return to user input.

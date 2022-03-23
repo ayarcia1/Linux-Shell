@@ -1,5 +1,5 @@
 //Name: Arif Ayarci
-//Lab 2: Shell Program
+//Lab 2: Creating a Linux Type Shell Program
 //Date: 3/23/2022
 //Section: CIS-3207-01
 #include <stdio.h>
