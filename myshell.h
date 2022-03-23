@@ -10,7 +10,7 @@
 char *recursive_dir(char *path_name);
 void read_file(char *file);
 int background(int argc, char **argv, int *bg);
-
+//I/O redirection function.
 int redirection(int argc, char **argv, char **envp, int *re){
     const char *error_message = "myshell: an error has occured.\n";
     int i, j, pid, bg = 0;
@@ -19,11 +19,11 @@ int redirection(int argc, char **argv, char **envp, int *re){
     //duplicate stdin and stdout.
     int stdOutSave = dup(0);
     int stdInSave = dup(1);
-    //call background funtion for "&" inputs.
+    //call background function for "&" inputs.
     background(argc, argv, &bg);
-    //iterate through argv commands.
+    //iterate through argv arguments.
     for(i=1; i<argc; i++){
-        //if an argv command contains "<".
+        //if an argv argument contains "<".
         if(strcmp(argv[i], "<") == 0){
             //increment the I/O redirection flag.
             *re += 1;
@@ -67,7 +67,7 @@ int redirection(int argc, char **argv, char **envp, int *re){
                 fflush(stdin);
             }
         }
-        //if an argv command contains ">".
+        //if an argv argument contains ">".
         if(strcmp(argv[i], ">") == 0){
             //increment the I/O redirection flag.
             *re += 1;
@@ -85,7 +85,7 @@ int redirection(int argc, char **argv, char **envp, int *re){
             }
             //child process.
             else if(pid == 0){
-                //open file after ">" fpr writing, truncting, and creating.
+                //open file after ">" fpr writing, truncating, and creating.
                 out_fd = open(argv[i+1], O_WRONLY | O_TRUNC | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
                 //if file fails to open, print error and return to user input.
                 if(out_fd == -1){
@@ -141,7 +141,7 @@ int redirection(int argc, char **argv, char **envp, int *re){
                 fflush(stdout);
             }
         }
-        //if an argv command contains ">>".
+        //if an argv argument contains ">>".
         if(strcmp(argv[i], ">>") == 0){
             //increment the I/O redirection flag.
             *re += 1;
@@ -234,7 +234,7 @@ int redirection(int argc, char **argv, char **envp, int *re){
         //print success message.
         printf("myshell: I/O redirection executed.\n");
     }
-    //if there is background and redirection was executed.
+    //if process is in background and redirection was executed.
     if(bg > 0 && *re > 0){
         //kill child for every background process.
         for(i=0; i<bg; i++){
@@ -246,13 +246,13 @@ int redirection(int argc, char **argv, char **envp, int *re){
     //return back to while loop in main.
     return 1;
 }
-
+//pipe function.
 int pipe_func(int argc, char **argv, int *pi){
     const char *error_message = "myshell: an error has occured.\n";
     int fd[2];
     int pid, i, j, bg = 0;
     *pi = 0;
-    //call background funtion for "&" inputs.
+    //call background function for "&" inputs.
     background(argc, argv, &bg);
     
     for(i=1; i<argc; i++){
@@ -268,7 +268,7 @@ int pipe_func(int argc, char **argv, int *pi){
                 write(STDERR_FILENO, error_message, strlen(error_message));
 	            return 1;
             }
-
+            //if pipe is successful.
             else if(pipe(fd) == 0){
                 //create a copy of the process.
                 pid = fork();
@@ -291,7 +291,7 @@ int pipe_func(int argc, char **argv, int *pi){
                     //exec the argument inputs before "|" command.
 		            execvp(argv[1], &argv[1]);
                 }
-
+                //parent process.
                 else{
                     //create a copy of the process.
 	                pid = fork();
@@ -323,16 +323,18 @@ int pipe_func(int argc, char **argv, int *pi){
 	                        return 1;
 		                }
 	                }
-
+                    //parent process.
 	                else{
-                        //if process is not in background wait for child process.
+                        //if process is not in background.
                         if(bg == 0){
+                            //close reading and writing ends of pipe.
                             close(fd[0]);
                             close(fd[1]);
+                            //wait for child process and print success message.
                             waitpid(pid, NULL, 0);
                             printf("myshell: pipe has been executed\n");
                         }
-                        //if process is in the background kill the child processs.
+                        //if process is in background kill the child process and print success message.
                         if(bg > 0){
                             kill(pid, SIGTERM);
                             printf("myshell: process running in the background.\n");
@@ -345,12 +347,12 @@ int pipe_func(int argc, char **argv, int *pi){
     //return back to while loop in main.
     return 1;
 }
-
+//external function.
 int external(int argc, char **argv){
     const char *error_message = "myshell: an error has occured.\n";
     int i, pid;
     int bg = 0;
-    //call background funtion for "&" inputs.
+    //call background function for "&" inputs.
     background(argc, argv, &bg);
     //if there is at least one argument.
     if(argc >= 2){
@@ -380,10 +382,13 @@ int external(int argc, char **argv){
             waitpid(pid, NULL, 0);
             printf("myshell: external command executed.\n");
         }
-        //if process is in the background kill the child processs.
+        //if process is in background.
         if(bg > 0){
-            kill(pid, SIGTERM);
-            printf("myshell: process running in the background.\n");
+            //kill child for every background process.
+            for(i=0; i<bg; i++){
+                kill(pid, SIGTERM);
+                printf("myshell: process running in the background.\n");
+            }
         }
     }
     //return back to while loop in main.

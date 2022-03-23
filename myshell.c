@@ -14,7 +14,7 @@ int built_in(int argc, char **argv, char **envp, int *in);
 
 int main(int argc, char **argv, char **envp){
     const char *error_message = "myshell: an error has occured.\n";
-    //executing shell with no arguments executes shell in interactive mode.
+    //executing shell with no arguments will execute shell in interactive mode.
     if(argc == 1){
         //prints initial myshell> and gets initial user input
         printf("myshell> ");
@@ -24,7 +24,7 @@ int main(int argc, char **argv, char **envp){
             printf("myshell> ");
             parse_line(&argc, argv, stdin);
         }
-        //funtions return 1, while loop will execute all funtions in loop.
+        //functions return 1, while loop will execute all functions in loop.
         while(1){
             //flags to determine what functions have been used.
             int re = 0;
@@ -93,7 +93,7 @@ int main(int argc, char **argv, char **envp){
         exit(1);
     }
 }
-
+//function to parse stdin line by line.
 void parse_line(int *argc, char **argv, FILE *file){
     //initialize argv[i] and argc to 1;
     int i = 1;
@@ -122,7 +122,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
     const char *error_message = "myshell: an error has occured.\n";
     int i;
     *in = 0;
-
+    //if the first argument is "cd".
     if(strcmp(argv[1], "cd") == 0){
         //cd with no arguments.
         if(argc == 2){
@@ -150,7 +150,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
         //increment built in flag.
         *in += 1;
     }
-
+    //if the first argument is "clr".
     else if(strcmp(argv[1], "clr") == 0){
         //clr by itself prints a text that clears the shell bash.
         if(argc == 2){
@@ -164,7 +164,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
         //increment built in flag.
         *in += 1;
     }
-
+    //if the first argument is "dir".
     else if(strcmp(argv[1], "dir") == 0){
         DIR *directory;
 
@@ -200,9 +200,9 @@ int built_in(int argc, char **argv, char **envp, int *in){
         //increment the built in flag.
         *in += 1;
     }
-
+    //if the first argument is "path".
     else if(strcmp(argv[1], "path") == 0){
-        //if path takes no arguments set path to "".
+        //if path is given no arguments set path to "".
         if(argc == 2){
             setenv("PATH", "", 1);
         }
@@ -226,10 +226,10 @@ int built_in(int argc, char **argv, char **envp, int *in){
         //increment built in flag.
         *in += 1;
     }
-
+    //if the first argument is "environ".
     else if(strcmp(argv[1], "environ") == 0){
         if(argc == 2){
-            //iterates through every environmental variable and prints.
+            //iterate through every environmental variable and prints.
             for(i=0; envp[i]; i++){
                 printf("%s\n", envp[i]);
             }
@@ -242,9 +242,9 @@ int built_in(int argc, char **argv, char **envp, int *in){
         //increment built in flag.
         *in += 1;
     }
-
+    //if the first argument is "echo".
     else if(strcmp(argv[1], "echo") == 0){
-        //if echo is give no arguments print a blank line.
+        //if echo is given no arguments print a blank line.
         if(argc == 2){
             printf("\n");
         }
@@ -262,7 +262,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
         //increment built in flag.
         *in += 1;
     }
-
+    //if the first argument is "help".
     else if(strcmp(argv[1], "help") == 0){
         //help with no arguments.
         if(argc == 2){
@@ -275,7 +275,7 @@ int built_in(int argc, char **argv, char **envp, int *in){
             return 1;
         }
     }
-
+    //if the first argument is "pause".
     else if(strcmp(argv[1], "pause") == 0){
         if(argc == 2){
             //while loop goes forever until it breaks.
@@ -301,11 +301,11 @@ int built_in(int argc, char **argv, char **envp, int *in){
         //increment built in flag.
         *in += 1;
     }
-
+    //if the first argument is "quit".
     else if(strcmp(argv[1], "quit") == 0){
         //quit with no arguments exits out of the shell.
         if(argc == 2){
-            exit(0);
+            exit(1);
         }
         //if more than zero arguments, error will print and return to user input.
         else{
@@ -318,12 +318,12 @@ int built_in(int argc, char **argv, char **envp, int *in){
     //return back to while loop in main.
     return 1;
 }
-
+//function to recursively print the contents of a directory.
 char *recursive_dir(char *path_name){
     char path[1024];
     struct dirent *files;
     DIR *directory;
-    //open directory for directory path call.
+    //open directory with directory path call.
     directory = opendir(path_name);
     //if directory does not open return nothing.
     if(directory == NULL){
@@ -341,7 +341,7 @@ char *recursive_dir(char *path_name){
             strcat(path, "/");
             //adds the inner directories to the end of the "/".
             strcat(path, files->d_name);
-            //calls recursive_dir funtion again with path to print the contents recursively.
+            //calls recursive_dir function again with path to print the contents recursively.
             recursive_dir(path);
         }
     }
@@ -350,7 +350,7 @@ char *recursive_dir(char *path_name){
     //returns directory path call.
     return path_name;
 }
-
+//function to read from a file.
 void read_file(char *file){
     const char *error_message = "myshell: an error has occured.\n";
     FILE *n;
@@ -362,7 +362,6 @@ void read_file(char *file){
         write(STDERR_FILENO, error_message, strlen(error_message));
         exit(1);
     }
-
     txt = fgetc(n);
     //while txt has not reached the end of a file.
     while(txt != EOF){
@@ -374,11 +373,11 @@ void read_file(char *file){
 	fclose(n);
     printf("\n");
 }
-
+//function to retrieve background process flag.
 int background(int argc, char **argv, int *bg){
     int i;
     *bg = 0;
-    //iterates through user input to find "&".
+    //iterate through user input to find "&".
     for(i=1; i<argc; i++){
         if(strcmp(argv[i], "&") == 0){
             //increment background flag.
